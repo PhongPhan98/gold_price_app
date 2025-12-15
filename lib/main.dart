@@ -42,6 +42,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       appBar: AppBar(
         title: Text(
           '',
@@ -54,26 +55,27 @@ class _HomeScreenState extends State<HomeScreen> {
 
         backgroundColor: const Color.fromARGB(255, 133, 30, 30),
       ),
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(
-            vertical: 100.0,
-          ), // Add 20px padding at the topr
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.start,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children:
+      body: SafeArea(
+        bottom: true,
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(
+              vertical: 100.0,
+            ), 
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children:
                 items.map((item) {
                   return Padding(
                     padding: const EdgeInsets.symmetric(vertical: 16.0),
                     child: GestureDetector(
                       onTap: () {
                         if (item == 'Bảo Tín Minh Châu') {
-                          // Navigate to GoldPriceNotificationApp
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => GoldPriceNotificationApp(),
+                              builder: (context) => BaoTinMinhChauGoldPricePage(),
                             ),
                           );
                         } else if (item == 'Mi Hồng') {
@@ -106,6 +108,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   );
                 }).toList(),
+            ),
           ),
         ),
       ),
@@ -114,8 +117,8 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
-class GoldPriceNotificationApp extends StatelessWidget {
-  const GoldPriceNotificationApp({super.key});
+class BaoTinMinhChauGoldPricePage extends StatelessWidget {
+  const BaoTinMinhChauGoldPricePage({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -123,19 +126,20 @@ class GoldPriceNotificationApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'Giá vàng BTMC',
       theme: ThemeData(primarySwatch: Colors.amber),
-      home: GoldPriceHomePage(),
+      home: BaoTinMinhChauGoldPriceHomePage(),
     );
   }
 }
 
-class GoldPriceHomePage extends StatefulWidget {
-  const GoldPriceHomePage({super.key});
+class BaoTinMinhChauGoldPriceHomePage extends StatefulWidget {
+  const BaoTinMinhChauGoldPriceHomePage({super.key});
 
   @override
-  _GoldPriceHomePageState createState() => _GoldPriceHomePageState();
+  _BaoTinMinhChauGoldPriceHomePageState createState() => _BaoTinMinhChauGoldPriceHomePageState();
 }
 
-class _GoldPriceHomePageState extends State<GoldPriceHomePage> {
+class _BaoTinMinhChauGoldPriceHomePageState 
+extends State<BaoTinMinhChauGoldPriceHomePage> {
   List<Map<String, String>> goldPrice = [];
   bool isLoading = false; // Add a loading state
 
@@ -233,23 +237,25 @@ class _GoldPriceHomePageState extends State<GoldPriceHomePage> {
           ),
         ],
       ),
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Colors.black87, Colors.black54],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
+      body: SafeArea(
+        bottom: true,
+        child: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Colors.black87, Colors.black54],
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+            ),
           ),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child:
-              isLoading
-                  ? Center(
-                    child:
-                        CircularProgressIndicator(), // Show loading indicator
-                  )
-                  : goldPrice.isEmpty
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child:
+                isLoading
+                    ? Center(
+                      child:
+                          CircularProgressIndicator(), // Show loading indicator
+                    )
+                    : goldPrice.isEmpty
                   ? Center(
                     child: Text(
                       'Không có dữ liệu giá vàng BTMC',
@@ -381,8 +387,9 @@ class _GoldPriceHomePageState extends State<GoldPriceHomePage> {
                       ),
                     ],
                   ),
+            ),
+          ),
         ),
-      ),
     );
   }
 }
@@ -516,28 +523,39 @@ class _MiHongGoldPriceHomePageState extends State<MiHongGoldPriceHomePage> {
               fetchMiHongGoldPrices(); // Call the API again
             },
           ),
+          IconButton(
+            icon: Icon(Icons.arrow_forward), // Add a link icon
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => DojiGoldPricePage()),
+              ); 
+            },
+          ),
         ],
       ),
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Colors.black87, Colors.black54],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
+      body: SafeArea(
+        bottom: true,
+        child: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Colors.black87, Colors.black54],
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+            ),
           ),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child:
-              isLoading
-                  ? Center(
-                    child:
-                        CircularProgressIndicator(), // Show loading indicator
-                  )
-                  : goldPrices.isEmpty
-                  ? Center(
-                    child: Text(
-                      'Không có dữ liệu giá vàng Mi Hồng',
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child:
+                isLoading
+                    ? Center(
+                      child:
+                          CircularProgressIndicator(), // Show loading indicator
+                    )
+                    : goldPrices.isEmpty
+                    ? Center(
+                      child: Text(
+                        'Không có dữ liệu giá vàng Mi Hồng',
                       style: TextStyle(fontSize: 22, color: Colors.white),
                     ),
                   )
@@ -702,8 +720,9 @@ class _MiHongGoldPriceHomePageState extends State<MiHongGoldPriceHomePage> {
                       ),
                     ],
                   ),
+            ),
+          ),
         ),
-      ),
     );
   }
 }
@@ -818,26 +837,28 @@ class _DojiGoldPriceHomePageState extends State<DojiGoldPriceHomePage> {
           ),
         ],
       ),
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Colors.black87, Colors.black54],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
+      body: SafeArea(
+        bottom: true,
+        child: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Colors.black87, Colors.black54],
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+            ),
           ),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child:
-              isLoading
-                  ? Center(
-                    child:
-                        CircularProgressIndicator(), // Show loading indicator
-                  )
-                  : goldPrices.isEmpty
-                  ? Center(
-                    child: Text(
-                      'Không có dữ liệu giá vàng Doji',
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child:
+                isLoading
+                    ? Center(
+                      child:
+                          CircularProgressIndicator(), // Show loading indicator
+                    )
+                    : goldPrices.isEmpty
+                    ? Center(
+                      child: Text(
+                        'Không có dữ liệu giá vàng Doji',
                       style: TextStyle(fontSize: 22, color: Colors.white),
                     ),
                   )
@@ -966,8 +987,9 @@ class _DojiGoldPriceHomePageState extends State<DojiGoldPriceHomePage> {
                       ),
                     ],
                   ),
+            ),
+          ),
         ),
-      ),
     );
   }
 }
