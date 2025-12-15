@@ -1,6 +1,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <application
-        android:label="Giá vàng today"
+        android:label="Giá Vàng News"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_gold_launcher"
         android:enableOnBackInvokedCallback="true">

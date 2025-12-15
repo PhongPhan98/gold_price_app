@@ -133,7 +133,7 @@ class _DojiGoldPriceHomePageState extends State<DojiGoldPriceHomePage> {
                             children: [
                               TableRow(
                                 decoration: BoxDecoration(
-                                  color: Colors.amber.shade800,
+                                  color:  Colors.yellow[800],
                                 ),
                                 children: [
                                   Padding(
