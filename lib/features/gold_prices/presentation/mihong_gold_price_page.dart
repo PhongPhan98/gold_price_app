@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/models/gold_price_entry.dart';
+import '../../../core/network/gold_price_exception.dart';
+import '../../../core/utils/date_time_formatter.dart';
 import '../../../core/widgets/provider_price_screen.dart';
 import '../data/services/mihong_service.dart';
 
@@ -16,6 +18,8 @@ class _MiHongGoldPriceHomePageState extends State<MiHongGoldPriceHomePage> {
 
   List<GoldPriceEntry> _goldPrices = [];
   bool _isLoading = false;
+  String? _errorMessage;
+  String? _lastUpdatedLabel;
 
   @override
   void initState() {
@@ -26,6 +30,7 @@ class _MiHongGoldPriceHomePageState extends State<MiHongGoldPriceHomePage> {
   Future<void> _fetchPrices() async {
     setState(() {
       _isLoading = true;
+      _errorMessage = null;
     });
 
     try {
@@ -33,6 +38,15 @@ class _MiHongGoldPriceHomePageState extends State<MiHongGoldPriceHomePage> {
       if (mounted) {
         setState(() {
           _goldPrices = prices;
+          _lastUpdatedLabel =
+              'Cập nhật lúc ${DateTimeFormatter.ddMMyyyyHHmm(DateTime.now())}';
+        });
+      }
+    } on GoldPriceException catch (error) {
+      if (mounted) {
+        setState(() {
+          _errorMessage = error.message;
+          _goldPrices = [];
         });
       }
     } catch (error) {
@@ -40,6 +54,7 @@ class _MiHongGoldPriceHomePageState extends State<MiHongGoldPriceHomePage> {
       if (mounted) {
         setState(() {
           _goldPrices = [];
+          _errorMessage = 'Đã xảy ra lỗi không xác định. Vui lòng thử lại.';
         });
       }
     } finally {
@@ -58,6 +73,8 @@ class _MiHongGoldPriceHomePageState extends State<MiHongGoldPriceHomePage> {
       entries: _goldPrices,
       isLoading: _isLoading,
       emptyMessage: 'Không có dữ liệu giá vàng Mi Hồng',
+      errorMessage: _errorMessage,
+      lastUpdatedLabel: _lastUpdatedLabel,
       onRefresh: _fetchPrices,
       nameFlex: 2,
       buyFlex: 3,
