@@ -1,0 +1,100 @@
+import '../../gold_prices/data/services/baotinminhchau_service.dart';
+import '../../gold_prices/data/services/doji_service.dart';
+import '../../gold_prices/data/services/mihong_service.dart';
+import '../models/provider_summary.dart';
+
+class HomeSummaryService {
+  HomeSummaryService({
+    BaoTinMinhChauService? baotinMinhChauService,
+    MiHongService? miHongService,
+    DojiService? dojiService,
+  })  : _baotinMinhChauService = baotinMinhChauService ?? BaoTinMinhChauService(),
+        _miHongService = miHongService ?? MiHongService(),
+        _dojiService = dojiService ?? DojiService();
+
+  final BaoTinMinhChauService _baotinMinhChauService;
+  final MiHongService _miHongService;
+  final DojiService _dojiService;
+
+  Future<List<ProviderSummary>> fetchSummaries() async {
+    final results = await Future.wait([
+      _buildBaoTinMinhChauSummary(),
+      _buildMiHongSummary(),
+      _buildDojiSummary(),
+    ]);
+
+    return results;
+  }
+
+  Future<ProviderSummary> _buildBaoTinMinhChauSummary() async {
+    try {
+      final prices = await _baotinMinhChauService.fetchPrices();
+      final preview = prices.take(2).map((item) {
+        return '${item.name}: ${item.buyPrice} / ${item.sellPrice}';
+      }).toList();
+
+      return ProviderSummary(
+        title: 'Bảo Tín Minh Châu',
+        subtitle: 'Giá vàng SJC, nhẫn tròn trơn và nhiều loại khác',
+        previewLines: preview.isEmpty ? ['Chưa có dữ liệu hiển thị'] : preview,
+        lastUpdated: prices.isNotEmpty ? prices.first.updatedAt : null,
+      );
+    } catch (_) {
+      return const ProviderSummary(
+        title: 'Bảo Tín Minh Châu',
+        subtitle: 'Giá vàng SJC, nhẫn tròn trơn và nhiều loại khác',
+        previewLines: ['Không tải được dữ liệu xem nhanh'],
+        lastUpdated: null,
+        hasError: true,
+      );
+    }
+  }
+
+  Future<ProviderSummary> _buildMiHongSummary() async {
+    try {
+      final prices = await _miHongService.fetchPrices();
+      final preview = prices.take(2).map((item) {
+        return '${item.name}: ${item.buyPrice} / ${item.sellPrice}';
+      }).toList();
+
+      return ProviderSummary(
+        title: 'Mi Hồng',
+        subtitle: 'Theo dõi giá mua bán và mức biến động trong ngày',
+        previewLines: preview.isEmpty ? ['Chưa có dữ liệu hiển thị'] : preview,
+        lastUpdated: prices.isNotEmpty ? prices.first.updatedAt : null,
+      );
+    } catch (_) {
+      return const ProviderSummary(
+        title: 'Mi Hồng',
+        subtitle: 'Theo dõi giá mua bán và mức biến động trong ngày',
+        previewLines: ['Không tải được dữ liệu xem nhanh'],
+        lastUpdated: null,
+        hasError: true,
+      );
+    }
+  }
+
+  Future<ProviderSummary> _buildDojiSummary() async {
+    try {
+      final prices = await _dojiService.fetchPrices();
+      final preview = prices.take(2).map((item) {
+        return '${item.name}: ${item.buyPrice} / ${item.sellPrice}';
+      }).toList();
+
+      return ProviderSummary(
+        title: 'Doji',
+        subtitle: 'Cập nhật bảng giá từ hệ thống vàng bạc đá quý Doji',
+        previewLines: preview.isEmpty ? ['Chưa có dữ liệu hiển thị'] : preview,
+        lastUpdated: prices.isNotEmpty ? prices.first.updatedAt : null,
+      );
+    } catch (_) {
+      return const ProviderSummary(
+        title: 'Doji',
+        subtitle: 'Cập nhật bảng giá từ hệ thống vàng bạc đá quý Doji',
+        previewLines: ['Không tải được dữ liệu xem nhanh'],
+        lastUpdated: null,
+        hasError: true,
+      );
+    }
+  }
+}
