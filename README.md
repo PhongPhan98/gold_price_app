@@ -119,3 +119,11 @@ Once Android SDK is available, run:
 flutter doctor -v
 flutter build apk --debug
 ```
+
+
+## Billing Integration Roadmap
+- Replace `MockPurchaseService` with real store billing service
+- Map product ids for monthly and yearly plans
+- Handle purchase success, cancel, pending, and restore states
+- Verify subscription state on app start
+- Add platform-specific billing setup for Google Play / App Store later

@@ -18,6 +18,7 @@ class _PremiumPaywallScreenState extends State<PremiumPaywallScreen> {
     isActive: false,
   );
   bool _isLoading = false;
+  String? _statusMessage;
 
   @override
   void initState() {
@@ -26,6 +27,11 @@ class _PremiumPaywallScreenState extends State<PremiumPaywallScreen> {
   }
 
   Future<void> _restorePurchases() async {
+    setState(() {
+      _isLoading = true;
+      _statusMessage = 'Đang kiểm tra trạng thái mua hàng...';
+    });
+
     final status = await _purchaseService.restorePurchases();
     if (!mounted) {
       return;
@@ -33,12 +39,17 @@ class _PremiumPaywallScreenState extends State<PremiumPaywallScreen> {
 
     setState(() {
       _currentStatus = status;
+      _isLoading = false;
+      _statusMessage = status.isPremium
+          ? 'Đã khôi phục trạng thái premium.'
+          : 'Chưa có gói premium nào được kích hoạt.';
     });
   }
 
   Future<void> _activatePlan(PremiumPlan plan) async {
     setState(() {
       _isLoading = true;
+      _statusMessage = 'Đang xử lý gói ${plan.name}...';
     });
 
     final status = await _purchaseService.purchase(plan);
@@ -49,16 +60,13 @@ class _PremiumPaywallScreenState extends State<PremiumPaywallScreen> {
     setState(() {
       _currentStatus = status;
       _isLoading = false;
+      _statusMessage = plan == PremiumPlan.proMonthly
+          ? 'Đã kích hoạt gói Pro Monthly (mock).'
+          : 'Đã kích hoạt gói Pro Yearly (mock).';
     });
 
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          plan == PremiumPlan.proMonthly
-              ? 'Đã kích hoạt gói Pro Monthly (mock).'
-              : 'Đã kích hoạt gói Pro Yearly (mock).',
-        ),
-      ),
+      SnackBar(content: Text(_statusMessage!)),
     );
   }
 
@@ -68,6 +76,13 @@ class _PremiumPaywallScreenState extends State<PremiumPaywallScreen> {
       appBar: AppBar(
         title: const Text('Nâng cấp Premium'),
         backgroundColor: Colors.yellow[800],
+        actions: [
+          IconButton(
+            onPressed: _isLoading ? null : _restorePurchases,
+            icon: const Icon(Icons.restore),
+            tooltip: 'Khôi phục mua hàng',
+          ),
+        ],
       ),
       body: Container(
         decoration: const BoxDecoration(
@@ -80,6 +95,29 @@ class _PremiumPaywallScreenState extends State<PremiumPaywallScreen> {
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
+            if (_statusMessage != null) ...[
+              Container(
+                margin: const EdgeInsets.only(bottom: 16),
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(
+                    color: _currentStatus.isPremium
+                        ? Colors.greenAccent.withValues(alpha: 0.4)
+                        : Colors.white12,
+                  ),
+                ),
+                child: Text(
+                  _statusMessage!,
+                  style: TextStyle(
+                    color: _currentStatus.isPremium
+                        ? Colors.greenAccent
+                        : Colors.white70,
+                  ),
+                ),
+              ),
+            ],
             Container(
               padding: const EdgeInsets.all(18),
               decoration: BoxDecoration(
@@ -161,6 +199,7 @@ class _PremiumPaywallScreenState extends State<PremiumPaywallScreen> {
                   Text('• Đã tách abstraction cho purchase flow', style: TextStyle(color: Colors.white70)),
                   Text('• Có thể thay MockPurchaseService bằng billing thật sau này', style: TextStyle(color: Colors.white70)),
                   Text('• Restore purchase path đã có skeleton', style: TextStyle(color: Colors.white70)),
+                  Text('• Có loading/state message để chuẩn bị cho flow billing thật', style: TextStyle(color: Colors.white70)),
                 ],
               ),
             ),

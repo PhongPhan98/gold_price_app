@@ -25,3 +25,9 @@
 - [ ] Commit current phase cleanly
 - [ ] Push branch to GitHub
 - [ ] Update README if user-facing behavior changed
+
+## Premium / Billing readiness
+- [ ] Replace mock purchase service with real billing provider
+- [ ] Define product ids for monthly/yearly plans
+- [ ] Test upgrade, restore, and expired subscription flows
+- [ ] Confirm premium gating matches active subscription state
