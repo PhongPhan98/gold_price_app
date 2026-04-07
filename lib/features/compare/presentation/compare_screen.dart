@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 
 import '../../home/models/provider_summary.dart';
-import '../../premium/presentation/premium_paywall_screen.dart';
 import '../../home/widgets/summary_badge.dart';
+import '../../premium/data/premium_status_storage.dart';
+import '../../premium/models/premium_status.dart';
+import '../../premium/presentation/premium_paywall_screen.dart';
 
-class CompareScreen extends StatelessWidget {
+class CompareScreen extends StatefulWidget {
   const CompareScreen({
     super.key,
     required this.summaries,
@@ -13,10 +15,53 @@ class CompareScreen extends StatelessWidget {
   final List<ProviderSummary> summaries;
 
   @override
+  State<CompareScreen> createState() => _CompareScreenState();
+}
+
+class _CompareScreenState extends State<CompareScreen> {
+  final PremiumStatusStorage _premiumStatusStorage = PremiumStatusStorage();
+  PremiumStatus _premiumStatus = const PremiumStatus(
+    plan: PremiumPlan.free,
+    isActive: false,
+  );
+
+  @override
+  void initState() {
+    super.initState();
+    _loadPremiumStatus();
+  }
+
+  Future<void> _loadPremiumStatus() async {
+    final status = await _premiumStatusStorage.loadStatus();
+    if (!mounted) {
+      return;
+    }
+
+    setState(() {
+      _premiumStatus = status;
+    });
+  }
+
+  void _openPremiumPaywall() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const PremiumPaywallScreen()),
+    ).then((_) => _loadPremiumStatus());
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final activeSummaries = summaries.where((item) => !item.hasError).toList();
+    final activeSummaries = widget.summaries.where((item) => !item.hasError).toList();
     final bestBuy = _findBest(activeSummaries, (item) => item.topBuyPrice);
     final bestSell = _findBest(activeSummaries, (item) => item.topSellPrice);
+    final rankedByBuy = [...activeSummaries]
+      ..sort((a, b) => (_parseCurrencyValue(b.topBuyPrice) ?? 0).compareTo(
+            _parseCurrencyValue(a.topBuyPrice) ?? 0,
+          ));
+    final rankedBySell = [...activeSummaries]
+      ..sort((a, b) => (_parseCurrencyValue(b.topSellPrice) ?? 0).compareTo(
+            _parseCurrencyValue(a.topSellPrice) ?? 0,
+          ));
 
     return Scaffold(
       appBar: AppBar(
@@ -46,12 +91,15 @@ class CompareScreen extends StatelessWidget {
                     bestBuyValue: bestBuy?.topBuyPrice,
                     bestSellTitle: bestSell?.title,
                     bestSellValue: bestSell?.topSellPrice,
-                    onUpgradeTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (_) => const PremiumPaywallScreen()),
-                      );
-                    },
+                    onUpgradeTap: _openPremiumPaywall,
+                    isPremium: _premiumStatus.isPremium,
+                  ),
+                  const SizedBox(height: 16),
+                  _AdvancedCompareSection(
+                    isPremium: _premiumStatus.isPremium,
+                    rankedByBuy: rankedByBuy,
+                    rankedBySell: rankedBySell,
+                    onUpgradeTap: _openPremiumPaywall,
                   ),
                   const SizedBox(height: 16),
                   ...activeSummaries.map((summary) {
@@ -212,6 +260,7 @@ class _CompareHeroCard extends StatelessWidget {
     required this.bestSellTitle,
     required this.bestSellValue,
     required this.onUpgradeTap,
+    required this.isPremium,
   });
 
   final String? bestBuyTitle;
@@ -219,6 +268,7 @@ class _CompareHeroCard extends StatelessWidget {
   final String? bestSellTitle;
   final String? bestSellValue;
   final VoidCallback onUpgradeTap;
+  final bool isPremium;
 
   @override
   Widget build(BuildContext context) {
@@ -241,19 +291,22 @@ class _CompareHeroCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 10),
-          const Text(
-            'Giúp người dùng nhìn ra nơi mua vào / bán ra nổi bật nhất ngay lập tức. Đây là nền tảng tốt cho tính năng premium nâng cao sau này.',
-            style: TextStyle(
+          Text(
+            isPremium
+                ? 'Bạn đang mở khóa compare nâng cao. Đây là khu vực có thể tăng giá trị trả phí rõ rệt cho người dùng.'
+                : 'Giúp người dùng nhìn ra nơi mua vào / bán ra nổi bật nhất ngay lập tức. Compare nâng cao sẽ là tính năng premium mạnh để bán về sau.',
+            style: const TextStyle(
               color: Colors.white70,
               height: 1.4,
             ),
           ),
-          const SizedBox(height: 16),
           const SizedBox(height: 12),
           ElevatedButton.icon(
             onPressed: onUpgradeTap,
-            icon: const Icon(Icons.workspace_premium),
-            label: const Text('Mở khóa compare nâng cao'),
+            icon: Icon(isPremium ? Icons.verified : Icons.workspace_premium),
+            label: Text(
+              isPremium ? 'Bạn đang dùng Compare Premium' : 'Mở khóa compare nâng cao',
+            ),
           ),
           const SizedBox(height: 16),
           Wrap(
@@ -272,6 +325,129 @@ class _CompareHeroCard extends StatelessWidget {
               ),
             ],
           ),
+        ],
+      ),
+    );
+  }
+}
+
+class _AdvancedCompareSection extends StatelessWidget {
+  const _AdvancedCompareSection({
+    required this.isPremium,
+    required this.rankedByBuy,
+    required this.rankedBySell,
+    required this.onUpgradeTap,
+  });
+
+  final bool isPremium;
+  final List<ProviderSummary> rankedByBuy;
+  final List<ProviderSummary> rankedBySell;
+  final VoidCallback onUpgradeTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: isPremium
+              ? Colors.greenAccent.withValues(alpha: 0.35)
+              : Colors.orangeAccent.withValues(alpha: 0.4),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Expanded(
+                child: Text(
+                  'Compare nâng cao',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  color: (isPremium ? Colors.greenAccent : Colors.orangeAccent)
+                      .withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  isPremium ? 'Đã mở khóa' : 'Premium',
+                  style: TextStyle(
+                    color: isPremium ? Colors.greenAccent : Colors.orangeAccent,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Text(
+            isPremium
+                ? 'Bạn có thể xem bảng xếp hạng mua vào / bán ra ngay tại đây.'
+                : 'Tính năng này sẽ mở khóa bảng xếp hạng và góc nhìn so sánh tốt hơn cho người dùng premium.',
+            style: const TextStyle(color: Colors.white70, height: 1.4),
+          ),
+          const SizedBox(height: 14),
+          if (!isPremium)
+            OutlinedButton.icon(
+              onPressed: onUpgradeTap,
+              icon: const Icon(Icons.lock_open),
+              label: const Text('Nâng cấp để xem compare nâng cao'),
+            )
+          else
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Top mua vào',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                ...rankedByBuy.take(3).toList().asMap().entries.map((entry) {
+                  final index = entry.key;
+                  final item = entry.value;
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: Text(
+                      '${index + 1}. ${item.title} — ${item.topBuyPrice ?? '--'}',
+                      style: const TextStyle(color: Colors.white70),
+                    ),
+                  );
+                }),
+                const SizedBox(height: 12),
+                const Text(
+                  'Top bán ra',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                ...rankedBySell.take(3).toList().asMap().entries.map((entry) {
+                  final index = entry.key;
+                  final item = entry.value;
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: Text(
+                      '${index + 1}. ${item.title} — ${item.topSellPrice ?? '--'}',
+                      style: const TextStyle(color: Colors.white70),
+                    ),
+                  );
+                }),
+              ],
+            ),
         ],
       ),
     );
