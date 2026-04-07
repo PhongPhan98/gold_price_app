@@ -125,12 +125,13 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       resizeToAvoidBottomInset: false,
       appBar: AppBar(
-        title: const Text(
-          'Giá vàng Việt Nam',
+        title: Text(
+          'Giá Vàng VN',
           style: TextStyle(
             fontSize: 26,
             fontWeight: FontWeight.bold,
             fontFamily: 'Roboto',
+            color: Colors.yellowAccent.withValues(alpha: 0.8),
           ),
         ),
         centerTitle: true,
@@ -144,11 +145,13 @@ class _HomeScreenState extends State<HomeScreen> {
               );
             },
             icon: const Icon(Icons.notifications_active_outlined),
+            color: const Color.fromARGB(255, 202, 182, 1),
             tooltip: 'Cảnh báo giá',
           ),
           IconButton(
             onPressed: _openCompareScreen,
             icon: const Icon(Icons.compare_arrows),
+            color: const Color.fromARGB(255, 202, 182, 1),
             tooltip: 'So sánh nhanh',
           ),
           IconButton(
@@ -159,11 +162,13 @@ class _HomeScreenState extends State<HomeScreen> {
               );
             },
             icon: const Icon(Icons.workspace_premium_outlined),
+            color: const Color.fromARGB(255, 202, 182, 1),
             tooltip: 'Nâng cấp Premium',
           ),
           IconButton(
             onPressed: _loadSummaries,
             icon: const Icon(Icons.refresh),
+            color: const Color.fromARGB(255, 202, 182, 1),
           ),
         ],
       ),
@@ -274,10 +279,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 padding: const EdgeInsets.symmetric(
                   horizontal: 12.0,
                   vertical: 6.0,
-                ),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(20.0),
-                  border: Border.all(color: _accentColor, width: 1.0),
                 ),
                 child: const Text(
                   'v1.0.0',

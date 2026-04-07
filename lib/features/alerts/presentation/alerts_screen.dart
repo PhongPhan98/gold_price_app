@@ -134,7 +134,7 @@ class _AlertsScreenState extends State<AlertsScreen> {
                   ),
                   const SizedBox(height: 12),
                   DropdownButtonFormField<String>(
-                    initialValue: _selectedProvider,
+                    value: _selectedProvider,
                     dropdownColor: Colors.black87,
                     items: const [
                       DropdownMenuItem(value: 'Bảo Tín Minh Châu', child: Text('Bảo Tín Minh Châu')),
@@ -151,7 +151,7 @@ class _AlertsScreenState extends State<AlertsScreen> {
                   ),
                   const SizedBox(height: 12),
                   DropdownButtonFormField<PriceAlertDirection>(
-                    initialValue: _selectedDirection,
+                    value: _selectedDirection,
                     dropdownColor: Colors.black87,
                     items: const [
                       DropdownMenuItem(

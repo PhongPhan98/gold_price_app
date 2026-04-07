@@ -7,46 +7,14 @@ import '../../../../core/network/gold_price_exception.dart';
 import '../../../../core/network/network_constants.dart';
 
 class MiHongService {
-  String? _laravelSession;
-
-  Future<void> _fetchLaravelSession() async {
-    final response = await http
-        .get(Uri.parse('https://www.mihong.vn'))
-        .timeout(NetworkConstants.requestTimeout);
-
-    final cookies = response.headers['set-cookie'];
-    if (cookies == null) {
-      throw const GoldPriceException(
-        'Không lấy được phiên làm việc từ Mi Hồng.',
-      );
-    }
-
-    final sessionMatch = RegExp(r'laravel_session=([^;]+)').firstMatch(cookies);
-    if (sessionMatch != null) {
-      _laravelSession = sessionMatch.group(1);
-      return;
-    }
-
-    throw const GoldPriceException(
-      'Không tìm thấy phiên truy cập hợp lệ từ Mi Hồng.',
-    );
-  }
-
+ 
   Future<List<GoldPriceEntry>> fetchPrices() async {
     try {
-      if (_laravelSession == null) {
-        await _fetchLaravelSession();
-      }
-
+      final url = 'https://api.mihong.vn/v1/gold-prices?market=domestic';
+      
       final response = await http
           .get(
-            Uri.parse('https://www.mihong.vn/api/v1/gold/prices/current'),
-            headers: {
-              'x-requested-with': 'XMLHttpRequest',
-              'referer': 'https://www.mihong.vn/vi/gia-vang-trong-nuoc',
-              if (_laravelSession != null)
-                'Cookie': 'laravel_session=$_laravelSession',
-            },
+            Uri.parse(url)
           )
           .timeout(NetworkConstants.requestTimeout);
 
@@ -56,14 +24,9 @@ class MiHongService {
         );
       }
 
-      final jsonResponse = json.decode(response.body) as Map<String, dynamic>;
-      if (jsonResponse['success'] != true) {
-        throw const GoldPriceException(
-          'Mi Hồng chưa trả về dữ liệu hợp lệ.',
-        );
-      }
-
-      final data = jsonResponse['data'] as List<dynamic>? ?? [];
+      // API returns a direct array, not wrapped in success/data fields
+      final data = json.decode(response.body) as List<dynamic>;
+      
       return data.map((item) {
         return GoldPriceEntry(
           name: item['code']?.toString() ?? 'N/A',
@@ -78,9 +41,9 @@ class MiHongService {
       }).toList();
     } on GoldPriceException {
       rethrow;
-    } catch (_) {
-      throw const GoldPriceException(
-        'Không thể kết nối tới nguồn giá vàng Mi Hồng. Vui lòng thử lại.',
+    } catch (e) {
+      throw GoldPriceException(
+        'Không thể kết nối tới nguồn giá vàng Mi Hồng. Lỗi: $e',
       );
     }
   }
