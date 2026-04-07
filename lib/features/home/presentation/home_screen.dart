@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../alerts/presentation/alerts_screen.dart';
 import '../../compare/presentation/compare_screen.dart';
 import '../../gold_prices/presentation/baotinminhchau_gold_price_page.dart';
 import '../../gold_prices/presentation/doji_gold_price_page.dart';
@@ -135,6 +136,16 @@ class _HomeScreenState extends State<HomeScreen> {
         backgroundColor: _backgroundColor,
         actions: [
           IconButton(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const AlertsScreen()),
+              );
+            },
+            icon: const Icon(Icons.notifications_active_outlined),
+            tooltip: 'Cảnh báo giá',
+          ),
+          IconButton(
             onPressed: _openCompareScreen,
             icon: const Icon(Icons.compare_arrows),
             tooltip: 'So sánh nhanh',
@@ -205,10 +216,26 @@ class _HomeScreenState extends State<HomeScreen> {
                           ],
                         ),
                         const SizedBox(height: 14),
-                        ElevatedButton.icon(
-                          onPressed: _openCompareScreen,
-                          icon: const Icon(Icons.compare_arrows),
-                          label: const Text('Mở màn hình so sánh nhanh'),
+                        Wrap(
+                          spacing: 10,
+                          runSpacing: 10,
+                          children: [
+                            ElevatedButton.icon(
+                              onPressed: _openCompareScreen,
+                              icon: const Icon(Icons.compare_arrows),
+                              label: const Text('Mở màn hình so sánh nhanh'),
+                            ),
+                            ElevatedButton.icon(
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(builder: (_) => const AlertsScreen()),
+                                );
+                              },
+                              icon: const Icon(Icons.add_alert),
+                              label: const Text('Thiết lập cảnh báo'),
+                            ),
+                          ],
                         ),
                       ],
                     ),
