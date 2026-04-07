@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../premium/data/premium_status_storage.dart';
+import '../../premium/models/premium_status.dart';
 import '../../premium/presentation/premium_paywall_screen.dart';
 import '../data/price_alert_storage.dart';
 import '../models/price_alert.dart';
@@ -20,39 +21,44 @@ class _AlertsScreenState extends State<AlertsScreen> {
   List<PriceAlert> _alerts = [];
   String _selectedProvider = 'Mi Hồng';
   PriceAlertDirection _selectedDirection = PriceAlertDirection.above;
+  PremiumStatus _premiumStatus = const PremiumStatus(
+    plan: PremiumPlan.free,
+    isActive: false,
+  );
 
   @override
   void initState() {
     super.initState();
-    _loadAlerts();
+    _loadScreenData();
   }
 
-  Future<void> _loadAlerts() async {
+  Future<void> _loadScreenData() async {
     final alerts = await _storage.loadAlerts();
+    final premiumStatus = await _premiumStatusStorage.loadStatus();
     if (!mounted) {
       return;
     }
     setState(() {
       _alerts = alerts;
+      _premiumStatus = premiumStatus;
     });
   }
 
   Future<void> _addAlert() async {
-    final premiumStatus = await _premiumStatusStorage.loadStatus();
     final targetPrice = _targetPriceController.text.trim();
     if (targetPrice.isEmpty) {
       return;
     }
 
     final needsPremium = _alerts.isNotEmpty;
-    if (needsPremium && !premiumStatus.isPremium) {
+    if (needsPremium && !_premiumStatus.isPremium) {
       if (!mounted) {
         return;
       }
       Navigator.push(
         context,
         MaterialPageRoute(builder: (_) => const PremiumPaywallScreen()),
-      );
+      ).then((_) => _loadScreenData());
       return;
     }
 
@@ -90,6 +96,25 @@ class _AlertsScreenState extends State<AlertsScreen> {
     });
   }
 
+  Future<void> _deleteAlert(PriceAlert alert) async {
+    final updatedAlerts = _alerts.where((item) => item.id != alert.id).toList();
+    await _storage.saveAlerts(updatedAlerts);
+    if (!mounted) {
+      return;
+    }
+
+    setState(() {
+      _alerts = updatedAlerts;
+    });
+  }
+
+  void _openPremiumPaywall() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const PremiumPaywallScreen()),
+    ).then((_) => _loadScreenData());
+  }
+
   @override
   void dispose() {
     _targetPriceController.dispose();
@@ -98,6 +123,9 @@ class _AlertsScreenState extends State<AlertsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final freeAlertsUsed = _alerts.where((item) => !item.isPremium).length;
+    final premiumAlertsCount = _alerts.where((item) => item.isPremium).length;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Cảnh báo giá'),
@@ -114,6 +142,32 @@ class _AlertsScreenState extends State<AlertsScreen> {
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: _premiumStatus.isPremium
+                      ? Colors.greenAccent.withValues(alpha: 0.4)
+                      : Colors.white12,
+                ),
+              ),
+              child: Wrap(
+                spacing: 12,
+                runSpacing: 12,
+                children: [
+                  _MetricChip(label: 'Free alert', value: '$freeAlertsUsed / 1'),
+                  _MetricChip(label: 'Premium alerts', value: '$premiumAlertsCount'),
+                  _MetricChip(
+                    label: 'Gói hiện tại',
+                    value: _premiumStatus.isPremium ? 'Premium' : 'Free',
+                    highlight: _premiumStatus.isPremium,
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
@@ -184,25 +238,32 @@ class _AlertsScreenState extends State<AlertsScreen> {
                   ElevatedButton.icon(
                     onPressed: _addAlert,
                     icon: const Icon(Icons.add_alert),
-                    label: Text(_alerts.isEmpty ? 'Tạo cảnh báo miễn phí' : 'Tạo thêm cảnh báo (Premium)'),
+                    label: Text(
+                      _alerts.isEmpty
+                          ? 'Tạo cảnh báo miễn phí'
+                          : _premiumStatus.isPremium
+                              ? 'Tạo thêm cảnh báo'
+                              : 'Tạo thêm cảnh báo (Premium)',
+                    ),
                   ),
                   const SizedBox(height: 10),
                   Text(
                     _alerts.isEmpty
                         ? 'Bạn đang ở free tier: tạo cảnh báo đầu tiên miễn phí.'
-                        : 'Bạn đã dùng hết quota miễn phí. Tạo thêm cảnh báo cần Premium.',
+                        : _premiumStatus.isPremium
+                            ? 'Bạn đang dùng premium, có thể tạo thêm nhiều cảnh báo.'
+                            : 'Bạn đã dùng hết quota miễn phí. Tạo thêm cảnh báo cần Premium.',
                     style: const TextStyle(color: Colors.white60, height: 1.4),
                   ),
                   const SizedBox(height: 10),
                   OutlinedButton.icon(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (_) => const PremiumPaywallScreen()),
-                      );
-                    },
+                    onPressed: _openPremiumPaywall,
                     icon: const Icon(Icons.workspace_premium_outlined),
-                    label: const Text('Xem quyền lợi Premium'),
+                    label: Text(
+                      _premiumStatus.isPremium
+                          ? 'Quản lý quyền lợi Premium'
+                          : 'Xem quyền lợi Premium',
+                    ),
                   ),
                 ],
               ),
@@ -269,9 +330,19 @@ class _AlertsScreenState extends State<AlertsScreen> {
                         ],
                       ),
                     ),
-                    Switch(
-                      value: alert.isEnabled,
-                      onChanged: (_) => _toggleAlert(alert),
+                    Column(
+                      children: [
+                        Switch(
+                          value: alert.isEnabled,
+                          onChanged: (_) => _toggleAlert(alert),
+                        ),
+                        IconButton(
+                          onPressed: () => _deleteAlert(alert),
+                          icon: const Icon(Icons.delete_outline),
+                          color: Colors.white70,
+                          tooltip: 'Xóa cảnh báo',
+                        ),
+                      ],
                     ),
                   ],
                 ),
@@ -279,6 +350,51 @@ class _AlertsScreenState extends State<AlertsScreen> {
             }),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _MetricChip extends StatelessWidget {
+  const _MetricChip({
+    required this.label,
+    required this.value,
+    this.highlight = false,
+  });
+
+  final String label;
+  final String value;
+  final bool highlight;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: Colors.black.withValues(alpha: 0.2),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: highlight
+              ? Colors.greenAccent.withValues(alpha: 0.45)
+              : Colors.white12,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: const TextStyle(color: Colors.white60, fontSize: 12),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            value,
+            style: TextStyle(
+              color: highlight ? Colors.greenAccent : Colors.white,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
       ),
     );
   }
