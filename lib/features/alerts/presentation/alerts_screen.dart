@@ -134,7 +134,7 @@ class _AlertsScreenState extends State<AlertsScreen> {
                   ),
                   const SizedBox(height: 12),
                   DropdownButtonFormField<String>(
-                    value: _selectedProvider,
+                    initialValue: _selectedProvider,
                     dropdownColor: Colors.black87,
                     items: const [
                       DropdownMenuItem(value: 'Bảo Tín Minh Châu', child: Text('Bảo Tín Minh Châu')),
@@ -151,7 +151,7 @@ class _AlertsScreenState extends State<AlertsScreen> {
                   ),
                   const SizedBox(height: 12),
                   DropdownButtonFormField<PriceAlertDirection>(
-                    value: _selectedDirection,
+                    initialValue: _selectedDirection,
                     dropdownColor: Colors.black87,
                     items: const [
                       DropdownMenuItem(
@@ -184,12 +184,14 @@ class _AlertsScreenState extends State<AlertsScreen> {
                   ElevatedButton.icon(
                     onPressed: _addAlert,
                     icon: const Icon(Icons.add_alert),
-                    label: const Text('Tạo cảnh báo'),
+                    label: Text(_alerts.isEmpty ? 'Tạo cảnh báo miễn phí' : 'Tạo thêm cảnh báo (Premium)'),
                   ),
                   const SizedBox(height: 10),
-                  const Text(
-                    'Gợi ý monetization: 1 cảnh báo đầu miễn phí, các cảnh báo tiếp theo là tính năng premium.',
-                    style: TextStyle(color: Colors.white60, height: 1.4),
+                  Text(
+                    _alerts.isEmpty
+                        ? 'Bạn đang ở free tier: tạo cảnh báo đầu tiên miễn phí.'
+                        : 'Bạn đã dùng hết quota miễn phí. Tạo thêm cảnh báo cần Premium.',
+                    style: const TextStyle(color: Colors.white60, height: 1.4),
                   ),
                   const SizedBox(height: 10),
                   OutlinedButton.icon(
@@ -257,7 +259,7 @@ class _AlertsScreenState extends State<AlertsScreen> {
                             const Padding(
                               padding: EdgeInsets.only(top: 6),
                               child: Text(
-                                'Premium',
+                                'Premium feature',
                                 style: TextStyle(
                                   color: Colors.orangeAccent,
                                   fontWeight: FontWeight.bold,
