@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../premium/data/premium_status_storage.dart';
+import '../../premium/presentation/premium_paywall_screen.dart';
 import '../data/price_alert_storage.dart';
 import '../models/price_alert.dart';
 
@@ -13,6 +15,7 @@ class AlertsScreen extends StatefulWidget {
 class _AlertsScreenState extends State<AlertsScreen> {
   final PriceAlertStorage _storage = PriceAlertStorage();
   final TextEditingController _targetPriceController = TextEditingController();
+  final PremiumStatusStorage _premiumStatusStorage = PremiumStatusStorage();
 
   List<PriceAlert> _alerts = [];
   String _selectedProvider = 'Mi Hồng';
@@ -35,8 +38,21 @@ class _AlertsScreenState extends State<AlertsScreen> {
   }
 
   Future<void> _addAlert() async {
+    final premiumStatus = await _premiumStatusStorage.loadStatus();
     final targetPrice = _targetPriceController.text.trim();
     if (targetPrice.isEmpty) {
+      return;
+    }
+
+    final needsPremium = _alerts.isNotEmpty;
+    if (needsPremium && !premiumStatus.isPremium) {
+      if (!mounted) {
+        return;
+      }
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => const PremiumPaywallScreen()),
+      );
       return;
     }
 
@@ -45,7 +61,7 @@ class _AlertsScreenState extends State<AlertsScreen> {
       provider: _selectedProvider,
       targetPrice: targetPrice,
       direction: _selectedDirection,
-      isPremium: _alerts.isNotEmpty,
+      isPremium: needsPremium,
     );
 
     final updatedAlerts = [..._alerts, nextAlert];

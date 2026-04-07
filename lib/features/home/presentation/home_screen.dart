@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../alerts/presentation/alerts_screen.dart';
+import '../../premium/presentation/premium_paywall_screen.dart';
 import '../../compare/presentation/compare_screen.dart';
 import '../../gold_prices/presentation/baotinminhchau_gold_price_page.dart';
 import '../../gold_prices/presentation/doji_gold_price_page.dart';
@@ -149,6 +150,16 @@ class _HomeScreenState extends State<HomeScreen> {
             onPressed: _openCompareScreen,
             icon: const Icon(Icons.compare_arrows),
             tooltip: 'So sánh nhanh',
+          ),
+          IconButton(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const PremiumPaywallScreen()),
+              );
+            },
+            icon: const Icon(Icons.workspace_premium_outlined),
+            tooltip: 'Nâng cấp Premium',
           ),
           IconButton(
             onPressed: _loadSummaries,
