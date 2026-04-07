@@ -191,6 +191,17 @@ class _AlertsScreenState extends State<AlertsScreen> {
                     'Gợi ý monetization: 1 cảnh báo đầu miễn phí, các cảnh báo tiếp theo là tính năng premium.',
                     style: TextStyle(color: Colors.white60, height: 1.4),
                   ),
+                  const SizedBox(height: 10),
+                  OutlinedButton.icon(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const PremiumPaywallScreen()),
+                      );
+                    },
+                    icon: const Icon(Icons.workspace_premium_outlined),
+                    label: const Text('Xem quyền lợi Premium'),
+                  ),
                 ],
               ),
             ),

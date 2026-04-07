@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../home/models/provider_summary.dart';
+import '../../premium/presentation/premium_paywall_screen.dart';
 import '../../home/widgets/summary_badge.dart';
 
 class CompareScreen extends StatelessWidget {
@@ -45,6 +46,12 @@ class CompareScreen extends StatelessWidget {
                     bestBuyValue: bestBuy?.topBuyPrice,
                     bestSellTitle: bestSell?.title,
                     bestSellValue: bestSell?.topSellPrice,
+                    onUpgradeTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const PremiumPaywallScreen()),
+                      );
+                    },
                   ),
                   const SizedBox(height: 16),
                   ...activeSummaries.map((summary) {
@@ -204,12 +211,14 @@ class _CompareHeroCard extends StatelessWidget {
     required this.bestBuyValue,
     required this.bestSellTitle,
     required this.bestSellValue,
+    required this.onUpgradeTap,
   });
 
   final String? bestBuyTitle;
   final String? bestBuyValue;
   final String? bestSellTitle;
   final String? bestSellValue;
+  final VoidCallback onUpgradeTap;
 
   @override
   Widget build(BuildContext context) {
@@ -238,6 +247,13 @@ class _CompareHeroCard extends StatelessWidget {
               color: Colors.white70,
               height: 1.4,
             ),
+          ),
+          const SizedBox(height: 16),
+          const SizedBox(height: 12),
+          ElevatedButton.icon(
+            onPressed: onUpgradeTap,
+            icon: const Icon(Icons.workspace_premium),
+            label: const Text('Mở khóa compare nâng cao'),
           ),
           const SizedBox(height: 16),
           Wrap(

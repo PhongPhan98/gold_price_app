@@ -83,6 +83,33 @@ class _PremiumPaywallScreenState extends State<PremiumPaywallScreen> {
               onTap: () => _activatePlan(PremiumPlan.proYearly),
             ),
             const SizedBox(height: 18),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Colors.white12),
+              ),
+              child: const Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Premium unlock',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  SizedBox(height: 10),
+                  Text('• Nhiều cảnh báo hơn', style: TextStyle(color: Colors.white70)),
+                  Text('• So sánh nâng cao hơn', style: TextStyle(color: Colors.white70)),
+                  Text('• Insight và lịch sử giá trong tương lai', style: TextStyle(color: Colors.white70)),
+                  Text('• Trải nghiệm ưu tiên để tăng khả năng chuyển đổi trả phí', style: TextStyle(color: Colors.white70)),
+                ],
+              ),
+            ),
+            const SizedBox(height: 18),
             const Text(
               'Đây là skeleton paywall nội bộ để chuẩn bị cho bước payment integration sau này.',
               style: TextStyle(color: Colors.white60),
