@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 
-import '../data/premium_status_storage.dart';
 import '../models/premium_status.dart';
+import '../services/mock_purchase_service.dart';
+import '../services/purchase_service.dart';
 
 class PremiumPaywallScreen extends StatefulWidget {
   const PremiumPaywallScreen({super.key});
@@ -11,16 +12,53 @@ class PremiumPaywallScreen extends StatefulWidget {
 }
 
 class _PremiumPaywallScreenState extends State<PremiumPaywallScreen> {
-  final PremiumStatusStorage _storage = PremiumStatusStorage();
+  final PurchaseService _purchaseService = MockPurchaseService();
+  PremiumStatus _currentStatus = const PremiumStatus(
+    plan: PremiumPlan.free,
+    isActive: false,
+  );
+  bool _isLoading = false;
 
-  Future<void> _activatePlan(PremiumPlan plan) async {
-    await _storage.saveStatus(PremiumStatus(plan: plan, isActive: true));
+  @override
+  void initState() {
+    super.initState();
+    _restorePurchases();
+  }
+
+  Future<void> _restorePurchases() async {
+    final status = await _purchaseService.restorePurchases();
     if (!mounted) {
       return;
     }
 
+    setState(() {
+      _currentStatus = status;
+    });
+  }
+
+  Future<void> _activatePlan(PremiumPlan plan) async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    final status = await _purchaseService.purchase(plan);
+    if (!mounted) {
+      return;
+    }
+
+    setState(() {
+      _currentStatus = status;
+      _isLoading = false;
+    });
+
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Đã kích hoạt premium mẫu cho bước phát triển tiếp theo.')),
+      SnackBar(
+        content: Text(
+          plan == PremiumPlan.proMonthly
+              ? 'Đã kích hoạt gói Pro Monthly (mock).'
+              : 'Đã kích hoạt gói Pro Yearly (mock).',
+        ),
+      ),
     );
   }
 
@@ -49,10 +87,10 @@ class _PremiumPaywallScreenState extends State<PremiumPaywallScreen> {
                 borderRadius: BorderRadius.circular(18),
                 border: Border.all(color: const Color.fromARGB(255, 202, 182, 1)),
               ),
-              child: const Column(
+              child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
+                  const Text(
                     'Mở khóa công cụ kiếm tiền từ dữ liệu',
                     style: TextStyle(
                       color: Colors.white,
@@ -60,10 +98,22 @@ class _PremiumPaywallScreenState extends State<PremiumPaywallScreen> {
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  SizedBox(height: 10),
-                  Text(
+                  const SizedBox(height: 10),
+                  const Text(
                     'Premium sẽ là nơi mở khóa nhiều cảnh báo hơn, so sánh nâng cao, lịch sử giá, insight tốt hơn và trải nghiệm không quảng cáo.',
                     style: TextStyle(color: Colors.white70, height: 1.4),
+                  ),
+                  const SizedBox(height: 14),
+                  Text(
+                    _currentStatus.isPremium
+                        ? 'Trạng thái hiện tại: ${_currentStatus.plan.name}'
+                        : 'Trạng thái hiện tại: free',
+                    style: TextStyle(
+                      color: _currentStatus.isPremium
+                          ? Colors.greenAccent
+                          : Colors.white70,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ],
               ),
@@ -73,6 +123,9 @@ class _PremiumPaywallScreenState extends State<PremiumPaywallScreen> {
               title: 'Pro Monthly',
               subtitle: 'Phù hợp để test conversion và thói quen trả phí hàng tháng',
               price: '49.000đ / tháng',
+              isLoading: _isLoading,
+              isActive: _currentStatus.plan == PremiumPlan.proMonthly &&
+                  _currentStatus.isPremium,
               onTap: () => _activatePlan(PremiumPlan.proMonthly),
             ),
             const SizedBox(height: 12),
@@ -80,6 +133,9 @@ class _PremiumPaywallScreenState extends State<PremiumPaywallScreen> {
               title: 'Pro Yearly',
               subtitle: 'Tỷ lệ giữ chân và doanh thu dài hạn tốt hơn',
               price: '399.000đ / năm',
+              isLoading: _isLoading,
+              isActive: _currentStatus.plan == PremiumPlan.proYearly &&
+                  _currentStatus.isPremium,
               onTap: () => _activatePlan(PremiumPlan.proYearly),
             ),
             const SizedBox(height: 18),
@@ -94,7 +150,7 @@ class _PremiumPaywallScreenState extends State<PremiumPaywallScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Premium unlock',
+                    'Payment integration preparation',
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 18,
@@ -102,17 +158,11 @@ class _PremiumPaywallScreenState extends State<PremiumPaywallScreen> {
                     ),
                   ),
                   SizedBox(height: 10),
-                  Text('• Nhiều cảnh báo hơn', style: TextStyle(color: Colors.white70)),
-                  Text('• So sánh nâng cao hơn', style: TextStyle(color: Colors.white70)),
-                  Text('• Insight và lịch sử giá trong tương lai', style: TextStyle(color: Colors.white70)),
-                  Text('• Trải nghiệm ưu tiên để tăng khả năng chuyển đổi trả phí', style: TextStyle(color: Colors.white70)),
+                  Text('• Đã tách abstraction cho purchase flow', style: TextStyle(color: Colors.white70)),
+                  Text('• Có thể thay MockPurchaseService bằng billing thật sau này', style: TextStyle(color: Colors.white70)),
+                  Text('• Restore purchase path đã có skeleton', style: TextStyle(color: Colors.white70)),
                 ],
               ),
-            ),
-            const SizedBox(height: 18),
-            const Text(
-              'Đây là skeleton paywall nội bộ để chuẩn bị cho bước payment integration sau này.',
-              style: TextStyle(color: Colors.white60),
             ),
           ],
         ),
@@ -127,12 +177,16 @@ class _PlanCard extends StatelessWidget {
     required this.subtitle,
     required this.price,
     required this.onTap,
+    required this.isLoading,
+    required this.isActive,
   });
 
   final String title;
   final String subtitle;
   final String price;
   final VoidCallback onTap;
+  final bool isLoading;
+  final bool isActive;
 
   @override
   Widget build(BuildContext context) {
@@ -141,18 +195,36 @@ class _PlanCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white12),
+        border: Border.all(
+          color: isActive
+              ? Colors.greenAccent.withValues(alpha: 0.4)
+              : Colors.white12,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            title,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-            ),
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  title,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              if (isActive)
+                const Text(
+                  'Đang hoạt động',
+                  style: TextStyle(
+                    color: Colors.greenAccent,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+            ],
           ),
           const SizedBox(height: 8),
           Text(
@@ -170,8 +242,8 @@ class _PlanCard extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           ElevatedButton(
-            onPressed: onTap,
-            child: const Text('Chọn gói này'),
+            onPressed: isLoading ? null : onTap,
+            child: Text(isLoading ? 'Đang xử lý...' : 'Chọn gói này'),
           ),
         ],
       ),
