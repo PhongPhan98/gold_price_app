@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 
+import '../../compare/presentation/compare_screen.dart';
 import '../../gold_prices/presentation/baotinminhchau_gold_price_page.dart';
 import '../../gold_prices/presentation/doji_gold_price_page.dart';
 import '../../gold_prices/presentation/mihong_gold_price_page.dart';
+import '../data/favorite_provider_storage.dart';
 import '../data/home_summary_service.dart';
 import '../models/provider_summary.dart';
 import '../widgets/summary_badge.dart';
@@ -19,8 +21,10 @@ class _HomeScreenState extends State<HomeScreen> {
   static const _accentColor = Color.fromARGB(255, 202, 182, 1);
 
   final HomeSummaryService _summaryService = HomeSummaryService();
-  final Set<String> _favoriteTitles = {'Mi Hồng'};
+  final FavoriteProviderStorage _favoriteProviderStorage =
+      FavoriteProviderStorage();
 
+  Set<String> _favoriteTitles = {'Mi Hồng'};
   late final List<_ProviderMenuItem> _items;
   List<ProviderSummary> _summaries = [];
   bool _isLoadingSummaries = true;
@@ -48,7 +52,19 @@ class _HomeScreenState extends State<HomeScreen> {
         pageBuilder: () => const DojiGoldPriceHomePage(),
       ),
     ];
+    _loadFavorites();
     _loadSummaries();
+  }
+
+  Future<void> _loadFavorites() async {
+    final favorites = await _favoriteProviderStorage.loadFavorites();
+    if (!mounted) {
+      return;
+    }
+
+    setState(() {
+      _favoriteTitles = favorites.isEmpty ? {'Mi Hồng'} : favorites;
+    });
   }
 
   Future<void> _loadSummaries() async {
@@ -67,7 +83,7 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
-  void _toggleFavorite(String title) {
+  Future<void> _toggleFavorite(String title) async {
     setState(() {
       if (_favoriteTitles.contains(title)) {
         _favoriteTitles.remove(title);
@@ -75,6 +91,17 @@ class _HomeScreenState extends State<HomeScreen> {
         _favoriteTitles.add(title);
       }
     });
+
+    await _favoriteProviderStorage.saveFavorites(_favoriteTitles);
+  }
+
+  void _openCompareScreen() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => CompareScreen(summaries: _summaries),
+      ),
+    );
   }
 
   @override
@@ -107,6 +134,11 @@ class _HomeScreenState extends State<HomeScreen> {
         centerTitle: true,
         backgroundColor: _backgroundColor,
         actions: [
+          IconButton(
+            onPressed: _openCompareScreen,
+            icon: const Icon(Icons.compare_arrows),
+            tooltip: 'So sánh nhanh',
+          ),
           IconButton(
             onPressed: _loadSummaries,
             icon: const Icon(Icons.refresh),
@@ -171,6 +203,12 @@ class _HomeScreenState extends State<HomeScreen> {
                                   : 'Sẵn sàng',
                             ),
                           ],
+                        ),
+                        const SizedBox(height: 14),
+                        ElevatedButton.icon(
+                          onPressed: _openCompareScreen,
+                          icon: const Icon(Icons.compare_arrows),
+                          label: const Text('Mở màn hình so sánh nhanh'),
                         ),
                       ],
                     ),
@@ -337,7 +375,9 @@ class _ProviderMenuCard extends StatelessWidget {
                             IconButton(
                               onPressed: onToggleFavorite,
                               icon: Icon(
-                                isFavorite ? Icons.push_pin : Icons.push_pin_outlined,
+                                isFavorite
+                                    ? Icons.push_pin
+                                    : Icons.push_pin_outlined,
                                 color: isFavorite
                                     ? const Color.fromARGB(255, 202, 182, 1)
                                     : Colors.white54,
@@ -426,9 +466,15 @@ class _SummaryPreview extends StatelessWidget {
                 runSpacing: 10,
                 children: [
                   if (summary!.topBuyPrice != null)
-                    SummaryBadge(label: 'Mua vào', value: summary!.topBuyPrice!),
+                    SummaryBadge(
+                      label: 'Mua vào',
+                      value: summary!.topBuyPrice!,
+                    ),
                   if (summary!.topSellPrice != null)
-                    SummaryBadge(label: 'Bán ra', value: summary!.topSellPrice!),
+                    SummaryBadge(
+                      label: 'Bán ra',
+                      value: summary!.topSellPrice!,
+                    ),
                 ],
               ),
             ),
