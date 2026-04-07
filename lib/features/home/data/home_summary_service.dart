@@ -32,12 +32,15 @@ class HomeSummaryService {
       final preview = prices.take(2).map((item) {
         return '${item.name}: ${item.buyPrice} / ${item.sellPrice}';
       }).toList();
+      final first = prices.isNotEmpty ? prices.first : null;
 
       return ProviderSummary(
         title: 'Bảo Tín Minh Châu',
         subtitle: 'Giá vàng SJC, nhẫn tròn trơn và nhiều loại khác',
         previewLines: preview.isEmpty ? ['Chưa có dữ liệu hiển thị'] : preview,
-        lastUpdated: prices.isNotEmpty ? prices.first.updatedAt : null,
+        lastUpdated: first?.updatedAt,
+        topBuyPrice: first?.buyPrice,
+        topSellPrice: first?.sellPrice,
       );
     } catch (_) {
       return const ProviderSummary(
@@ -45,6 +48,8 @@ class HomeSummaryService {
         subtitle: 'Giá vàng SJC, nhẫn tròn trơn và nhiều loại khác',
         previewLines: ['Không tải được dữ liệu xem nhanh'],
         lastUpdated: null,
+        topBuyPrice: null,
+        topSellPrice: null,
         hasError: true,
       );
     }
@@ -56,12 +61,15 @@ class HomeSummaryService {
       final preview = prices.take(2).map((item) {
         return '${item.name}: ${item.buyPrice} / ${item.sellPrice}';
       }).toList();
+      final first = prices.isNotEmpty ? prices.first : null;
 
       return ProviderSummary(
         title: 'Mi Hồng',
         subtitle: 'Theo dõi giá mua bán và mức biến động trong ngày',
         previewLines: preview.isEmpty ? ['Chưa có dữ liệu hiển thị'] : preview,
-        lastUpdated: prices.isNotEmpty ? prices.first.updatedAt : null,
+        lastUpdated: first?.updatedAt,
+        topBuyPrice: first?.buyPrice,
+        topSellPrice: first?.sellPrice,
       );
     } catch (_) {
       return const ProviderSummary(
@@ -69,6 +77,8 @@ class HomeSummaryService {
         subtitle: 'Theo dõi giá mua bán và mức biến động trong ngày',
         previewLines: ['Không tải được dữ liệu xem nhanh'],
         lastUpdated: null,
+        topBuyPrice: null,
+        topSellPrice: null,
         hasError: true,
       );
     }
@@ -80,12 +90,15 @@ class HomeSummaryService {
       final preview = prices.take(2).map((item) {
         return '${item.name}: ${item.buyPrice} / ${item.sellPrice}';
       }).toList();
+      final first = prices.isNotEmpty ? prices.first : null;
 
       return ProviderSummary(
         title: 'Doji',
         subtitle: 'Cập nhật bảng giá từ hệ thống vàng bạc đá quý Doji',
         previewLines: preview.isEmpty ? ['Chưa có dữ liệu hiển thị'] : preview,
-        lastUpdated: prices.isNotEmpty ? prices.first.updatedAt : null,
+        lastUpdated: first?.updatedAt,
+        topBuyPrice: first?.buyPrice,
+        topSellPrice: first?.sellPrice,
       );
     } catch (_) {
       return const ProviderSummary(
@@ -93,6 +106,8 @@ class HomeSummaryService {
         subtitle: 'Cập nhật bảng giá từ hệ thống vàng bạc đá quý Doji',
         previewLines: ['Không tải được dữ liệu xem nhanh'],
         lastUpdated: null,
+        topBuyPrice: null,
+        topSellPrice: null,
         hasError: true,
       );
     }

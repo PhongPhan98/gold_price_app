@@ -9,6 +9,8 @@ void main() {
         subtitle: 'Preview subtitle',
         previewLines: ['line 1', 'line 2'],
         lastUpdated: '07/04/2026 06:00',
+        topBuyPrice: '98,000,000',
+        topSellPrice: '100,000,000',
         hasError: true,
       );
 
@@ -16,6 +18,8 @@ void main() {
       expect(summary.subtitle, 'Preview subtitle');
       expect(summary.previewLines, ['line 1', 'line 2']);
       expect(summary.lastUpdated, '07/04/2026 06:00');
+      expect(summary.topBuyPrice, '98,000,000');
+      expect(summary.topSellPrice, '100,000,000');
       expect(summary.hasError, isTrue);
     });
   });

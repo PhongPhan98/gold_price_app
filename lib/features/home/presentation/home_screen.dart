@@ -5,6 +5,7 @@ import '../../gold_prices/presentation/doji_gold_price_page.dart';
 import '../../gold_prices/presentation/mihong_gold_price_page.dart';
 import '../data/home_summary_service.dart';
 import '../models/provider_summary.dart';
+import '../widgets/summary_badge.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -18,6 +19,7 @@ class _HomeScreenState extends State<HomeScreen> {
   static const _accentColor = Color.fromARGB(255, 202, 182, 1);
 
   final HomeSummaryService _summaryService = HomeSummaryService();
+  final Set<String> _favoriteTitles = {'Mi Hồng'};
 
   late final List<_ProviderMenuItem> _items;
   List<ProviderSummary> _summaries = [];
@@ -65,11 +67,31 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
+  void _toggleFavorite(String title) {
+    setState(() {
+      if (_favoriteTitles.contains(title)) {
+        _favoriteTitles.remove(title);
+      } else {
+        _favoriteTitles.add(title);
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final summariesByTitle = {
       for (final summary in _summaries) summary.title: summary,
     };
+
+    final orderedItems = [..._items]
+      ..sort((a, b) {
+        final aFav = _favoriteTitles.contains(a.title);
+        final bFav = _favoriteTitles.contains(b.title);
+        if (aFav == bFav) {
+          return a.title.compareTo(b.title);
+        }
+        return aFav ? -1 : 1;
+      });
 
     return Scaffold(
       resizeToAvoidBottomInset: false,
@@ -122,7 +144,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                         const SizedBox(height: 10),
                         const Text(
-                          'Chọn thương hiệu bên dưới để xem giá mua vào, bán ra và thời gian cập nhật mới nhất.',
+                          'Chọn thương hiệu bên dưới để xem giá mua vào, bán ra và thời gian cập nhật mới nhất. Bạn có thể ghim nguồn ưu tiên và so sánh nhanh ngay từ trang chủ.',
                           style: TextStyle(
                             fontSize: 16,
                             color: Colors.white70,
@@ -130,23 +152,23 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                         ),
                         const SizedBox(height: 14),
-                        Row(
+                        Wrap(
+                          spacing: 10,
+                          runSpacing: 10,
                           children: [
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 8,
-                              ),
-                              decoration: BoxDecoration(
-                                color: Colors.black.withValues(alpha: 0.18),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Text(
-                                _isLoadingSummaries
-                                    ? 'Đang tải xem nhanh...'
-                                    : 'Đã tải ${_summaries.length} nguồn dữ liệu',
-                                style: const TextStyle(color: Colors.white70),
-                              ),
+                            _TopMetricCard(
+                              label: 'Nguồn theo dõi',
+                              value: '${orderedItems.length}',
+                            ),
+                            _TopMetricCard(
+                              label: 'Đã ghim',
+                              value: '${_favoriteTitles.length}',
+                            ),
+                            _TopMetricCard(
+                              label: 'Trạng thái',
+                              value: _isLoadingSummaries
+                                  ? 'Đang tải'
+                                  : 'Sẵn sàng',
                             ),
                           ],
                         ),
@@ -154,13 +176,15 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
                   const SizedBox(height: 24),
-                  ..._items.map((item) {
+                  ...orderedItems.map((item) {
                     return Padding(
                       padding: const EdgeInsets.symmetric(vertical: 10.0),
                       child: _ProviderMenuCard(
                         item: item,
                         summary: summariesByTitle[item.title],
                         isLoadingSummary: _isLoadingSummaries,
+                        isFavorite: _favoriteTitles.contains(item.title),
+                        onToggleFavorite: () => _toggleFavorite(item.title),
                       ),
                     );
                   }),
@@ -199,16 +223,55 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
+class _TopMetricCard extends StatelessWidget {
+  const _TopMetricCard({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: Colors.black.withValues(alpha: 0.18),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: const TextStyle(color: Colors.white60, fontSize: 12),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            value,
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _ProviderMenuCard extends StatelessWidget {
   const _ProviderMenuCard({
     required this.item,
     required this.summary,
     required this.isLoadingSummary,
+    required this.isFavorite,
+    required this.onToggleFavorite,
   });
 
   final _ProviderMenuItem item;
   final ProviderSummary? summary;
   final bool isLoadingSummary;
+  final bool isFavorite;
+  final VoidCallback onToggleFavorite;
 
   @override
   Widget build(BuildContext context) {
@@ -258,14 +321,30 @@ class _ProviderMenuCard extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          item.title,
-                          style: const TextStyle(
-                            fontSize: 22,
-                            color: Color.fromARGB(255, 202, 182, 1),
-                            fontFamily: 'Source Sans Pro',
-                            fontWeight: FontWeight.bold,
-                          ),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                item.title,
+                                style: const TextStyle(
+                                  fontSize: 22,
+                                  color: Color.fromARGB(255, 202, 182, 1),
+                                  fontFamily: 'Source Sans Pro',
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                            IconButton(
+                              onPressed: onToggleFavorite,
+                              icon: Icon(
+                                isFavorite ? Icons.push_pin : Icons.push_pin_outlined,
+                                color: isFavorite
+                                    ? const Color.fromARGB(255, 202, 182, 1)
+                                    : Colors.white54,
+                              ),
+                              tooltip: isFavorite ? 'Bỏ ghim' : 'Ghim nguồn này',
+                            ),
+                          ],
                         ),
                         const SizedBox(height: 6),
                         Text(
@@ -339,6 +418,20 @@ class _SummaryPreview extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          if (summary!.topBuyPrice != null || summary!.topSellPrice != null)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: Wrap(
+                spacing: 10,
+                runSpacing: 10,
+                children: [
+                  if (summary!.topBuyPrice != null)
+                    SummaryBadge(label: 'Mua vào', value: summary!.topBuyPrice!),
+                  if (summary!.topSellPrice != null)
+                    SummaryBadge(label: 'Bán ra', value: summary!.topSellPrice!),
+                ],
+              ),
+            ),
           ...summary!.previewLines.map(
             (line) => Padding(
               padding: const EdgeInsets.only(bottom: 6),

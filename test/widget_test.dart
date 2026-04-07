@@ -9,6 +9,7 @@ void main() {
     expect(find.text('Theo dõi giá vàng nhanh gọn'), findsOneWidget);
     expect(find.text('Bảo Tín Minh Châu'), findsOneWidget);
     expect(find.text('Mi Hồng'), findsOneWidget);
-    expect(find.text('Đang tải xem nhanh...'), findsOneWidget);
+    expect(find.text('Đã ghim'), findsOneWidget);
+    expect(find.text('Đang tải'), findsOneWidget);
   });
 }
