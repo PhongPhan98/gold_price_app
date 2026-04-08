@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../models/premium_status.dart';
 import '../models/purchase_result.dart';
 import '../services/entitlement_service.dart';
-import '../services/mock_purchase_service.dart';
+import '../services/purchase_service_factory.dart';
 import '../services/purchase_service.dart';
 
 class PremiumPaywallScreen extends StatefulWidget {
@@ -14,7 +14,7 @@ class PremiumPaywallScreen extends StatefulWidget {
 }
 
 class _PremiumPaywallScreenState extends State<PremiumPaywallScreen> {
-  final PurchaseService _purchaseService = MockPurchaseService();
+  final PurchaseService _purchaseService = PurchaseServiceFactory.create(useMock: true);
   final EntitlementService _entitlementService = EntitlementService();
 
   PremiumStatus _currentStatus = const PremiumStatus(
@@ -235,6 +235,7 @@ class _PremiumPaywallScreenState extends State<PremiumPaywallScreen> {
                   Text('• Product ids đã được cấu hình để chuẩn bị nối billing thật', style: TextStyle(color: Colors.white70)),
                   Text('• Purchase result states đã sẵn sàng cho success/cancel/pending/error', style: TextStyle(color: Colors.white70)),
                   Text('• Entitlement service đã có để làm nguồn sự thật tập trung', style: TextStyle(color: Colors.white70)),
+                  Text('• PurchaseServiceFactory đã sẵn sàng để chuyển mock → store billing', style: TextStyle(color: Colors.white70)),
                 ],
               ),
             ),

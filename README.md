@@ -134,3 +134,4 @@ flutter build apk --debug
 - `gold_price_pro_yearly`
 
 - Purchase result states: success / cancelled / pending / error
+- Purchase service factory supports mock vs store adapter selection
