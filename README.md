@@ -127,3 +127,8 @@ flutter build apk --debug
 - Handle purchase success, cancel, pending, and restore states
 - Verify subscription state on app start
 - Add platform-specific billing setup for Google Play / App Store later
+
+
+### Billing product ids (prep)
+- `gold_price_pro_monthly`
+- `gold_price_pro_yearly`

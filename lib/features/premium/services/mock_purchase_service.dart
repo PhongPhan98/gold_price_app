@@ -1,3 +1,4 @@
+import '../config/billing_config.dart';
 import '../data/premium_status_storage.dart';
 import '../models/premium_status.dart';
 import 'purchase_service.dart';
@@ -18,5 +19,10 @@ class MockPurchaseService implements PurchaseService {
   @override
   Future<PremiumStatus> restorePurchases() async {
     return _storage.loadStatus();
+  }
+
+  @override
+  String productIdForPlan(PremiumPlan plan) {
+    return BillingConfig.productIdForPlan(plan);
   }
 }

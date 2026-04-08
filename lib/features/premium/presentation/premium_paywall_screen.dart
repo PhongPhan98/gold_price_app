@@ -161,6 +161,7 @@ class _PremiumPaywallScreenState extends State<PremiumPaywallScreen> {
               title: 'Pro Monthly',
               subtitle: 'Phù hợp để test conversion và thói quen trả phí hàng tháng',
               price: '49.000đ / tháng',
+              productId: _purchaseService.productIdForPlan(PremiumPlan.proMonthly),
               isLoading: _isLoading,
               isActive: _currentStatus.plan == PremiumPlan.proMonthly &&
                   _currentStatus.isPremium,
@@ -171,6 +172,7 @@ class _PremiumPaywallScreenState extends State<PremiumPaywallScreen> {
               title: 'Pro Yearly',
               subtitle: 'Tỷ lệ giữ chân và doanh thu dài hạn tốt hơn',
               price: '399.000đ / năm',
+              productId: _purchaseService.productIdForPlan(PremiumPlan.proYearly),
               isLoading: _isLoading,
               isActive: _currentStatus.plan == PremiumPlan.proYearly &&
                   _currentStatus.isPremium,
@@ -200,6 +202,7 @@ class _PremiumPaywallScreenState extends State<PremiumPaywallScreen> {
                   Text('• Có thể thay MockPurchaseService bằng billing thật sau này', style: TextStyle(color: Colors.white70)),
                   Text('• Restore purchase path đã có skeleton', style: TextStyle(color: Colors.white70)),
                   Text('• Có loading/state message để chuẩn bị cho flow billing thật', style: TextStyle(color: Colors.white70)),
+                  Text('• Product ids đã được cấu hình để chuẩn bị nối billing thật', style: TextStyle(color: Colors.white70)),
                 ],
               ),
             ),
@@ -215,6 +218,7 @@ class _PlanCard extends StatelessWidget {
     required this.title,
     required this.subtitle,
     required this.price,
+    required this.productId,
     required this.onTap,
     required this.isLoading,
     required this.isActive,
@@ -223,6 +227,7 @@ class _PlanCard extends StatelessWidget {
   final String title;
   final String subtitle;
   final String price;
+  final String productId;
   final VoidCallback onTap;
   final bool isLoading;
   final bool isActive;
@@ -269,6 +274,11 @@ class _PlanCard extends StatelessWidget {
           Text(
             subtitle,
             style: const TextStyle(color: Colors.white70),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Product id: $productId',
+            style: const TextStyle(color: Colors.white54, fontSize: 12),
           ),
           const SizedBox(height: 12),
           Text(
