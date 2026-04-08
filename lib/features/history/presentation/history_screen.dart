@@ -6,6 +6,7 @@ import '../../premium/presentation/premium_paywall_screen.dart';
 import '../../premium/services/premium_state_controller.dart';
 import '../models/price_history_point.dart';
 import '../utils/history_sample_generator.dart';
+import '../utils/history_trend_utils.dart';
 
 class HistoryScreen extends StatefulWidget {
   const HistoryScreen({
@@ -52,6 +53,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
   @override
   Widget build(BuildContext context) {
     final firstSummary = widget.summaries.isNotEmpty ? widget.summaries.first : null;
+    final providerName = firstSummary?.title ?? 'Nguồn mặc định';
     final baseValue = double.tryParse(
           (firstSummary?.topBuyPrice ?? '0').replaceAll(RegExp(r'[^0-9]'), ''),
         ) ??
@@ -60,6 +62,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
       baseValue: baseValue,
       prefixLabel: 'D',
     );
+    final insight = HistoryTrendUtils.buildTrendInsight(sampleHistory);
 
     return Scaffold(
       appBar: AppBar(
@@ -101,6 +104,14 @@ class _HistoryScreenState extends State<HistoryScreen> {
                   ),
                   const SizedBox(height: 10),
                   Text(
+                    'Nguồn đang xem: $providerName',
+                    style: const TextStyle(
+                      color: Colors.white70,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
                     _premiumStatus.isPremium
                         ? 'Bạn đang mở khóa nền tảng lịch sử giá. Đây sẽ là một trong những premium feature mạnh nhất để giữ chân người dùng.'
                         : 'Lịch sử giá và xu hướng là premium feature định hướng ra quyết định tốt hơn. Free tier hiện chỉ xem được bản xem trước.',
@@ -120,6 +131,45 @@ class _HistoryScreenState extends State<HistoryScreen> {
                           : 'Mở khóa lịch sử nâng cao',
                     ),
                   ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Colors.white12),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Insight xu hướng',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    insight,
+                    style: TextStyle(
+                      color: _premiumStatus.isPremium
+                          ? Colors.greenAccent
+                          : Colors.orangeAccent,
+                      height: 1.4,
+                    ),
+                  ),
+                  if (!_premiumStatus.isPremium) ...[
+                    const SizedBox(height: 10),
+                    const Text(
+                      'Premium sẽ mở khóa insight mạnh hơn, nhiều mốc thời gian hơn và khả năng đọc xu hướng sâu hơn.',
+                      style: TextStyle(color: Colors.white60, height: 1.4),
+                    ),
+                  ],
                 ],
               ),
             ),
