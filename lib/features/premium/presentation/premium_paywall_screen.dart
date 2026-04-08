@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../models/premium_status.dart';
 import '../models/purchase_result.dart';
+import '../services/entitlement_service.dart';
 import '../services/mock_purchase_service.dart';
 import '../services/purchase_service.dart';
 
@@ -14,6 +15,8 @@ class PremiumPaywallScreen extends StatefulWidget {
 
 class _PremiumPaywallScreenState extends State<PremiumPaywallScreen> {
   final PurchaseService _purchaseService = MockPurchaseService();
+  final EntitlementService _entitlementService = EntitlementService();
+
   PremiumStatus _currentStatus = const PremiumStatus(
     plan: PremiumPlan.free,
     isActive: false,
@@ -24,16 +27,16 @@ class _PremiumPaywallScreenState extends State<PremiumPaywallScreen> {
   @override
   void initState() {
     super.initState();
-    _restorePurchases();
+    _refreshEntitlementStatus();
   }
 
-  Future<void> _restorePurchases() async {
+  Future<void> _refreshEntitlementStatus() async {
     setState(() {
       _isLoading = true;
-      _statusMessage = 'Đang kiểm tra trạng thái mua hàng...';
+      _statusMessage = 'Đang kiểm tra entitlement premium...';
     });
 
-    final status = await _purchaseService.restorePurchases();
+    final status = await _entitlementService.refreshStatus();
     if (!mounted) {
       return;
     }
@@ -42,9 +45,19 @@ class _PremiumPaywallScreenState extends State<PremiumPaywallScreen> {
       _currentStatus = status;
       _isLoading = false;
       _statusMessage = status.isPremium
-          ? 'Đã khôi phục trạng thái premium.'
-          : 'Chưa có gói premium nào được kích hoạt.';
+          ? 'Entitlement premium đang hoạt động.'
+          : 'Entitlement premium hiện chưa được kích hoạt.';
     });
+  }
+
+  Future<void> _restorePurchases() async {
+    setState(() {
+      _isLoading = true;
+      _statusMessage = 'Đang kiểm tra trạng thái mua hàng...';
+    });
+
+    await _purchaseService.restorePurchases();
+    await _refreshEntitlementStatus();
   }
 
   Future<void> _activatePlan(PremiumPlan plan) async {
@@ -58,8 +71,13 @@ class _PremiumPaywallScreenState extends State<PremiumPaywallScreen> {
       return;
     }
 
+    final refreshedStatus = await _entitlementService.refreshStatus();
+    if (!mounted) {
+      return;
+    }
+
     setState(() {
-      _currentStatus = result.premiumStatus;
+      _currentStatus = refreshedStatus;
       _isLoading = false;
       _statusMessage = result.message ?? _messageForResult(result.status);
     });
@@ -216,6 +234,7 @@ class _PremiumPaywallScreenState extends State<PremiumPaywallScreen> {
                   Text('• Có loading/state message để chuẩn bị cho flow billing thật', style: TextStyle(color: Colors.white70)),
                   Text('• Product ids đã được cấu hình để chuẩn bị nối billing thật', style: TextStyle(color: Colors.white70)),
                   Text('• Purchase result states đã sẵn sàng cho success/cancel/pending/error', style: TextStyle(color: Colors.white70)),
+                  Text('• Entitlement service đã có để làm nguồn sự thật tập trung', style: TextStyle(color: Colors.white70)),
                 ],
               ),
             ),
