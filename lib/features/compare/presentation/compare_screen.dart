@@ -2,9 +2,10 @@ import 'package:flutter/material.dart';
 
 import '../../home/models/provider_summary.dart';
 import '../../home/widgets/summary_badge.dart';
-import '../../premium/services/premium_state_controller.dart';
 import '../../premium/models/premium_status.dart';
 import '../../premium/presentation/premium_paywall_screen.dart';
+import '../../premium/services/premium_state_controller.dart';
+import '../utils/compare_utils.dart';
 
 class CompareScreen extends StatefulWidget {
   const CompareScreen({
@@ -53,16 +54,14 @@ class _CompareScreenState extends State<CompareScreen> {
   @override
   Widget build(BuildContext context) {
     final activeSummaries = widget.summaries.where((item) => !item.hasError).toList();
-    final bestBuy = _findBest(activeSummaries, (item) => item.topBuyPrice);
-    final bestSell = _findBest(activeSummaries, (item) => item.topSellPrice);
+    final bestBuy = CompareUtils.findBest(activeSummaries, (item) => item.topBuyPrice);
+    final bestSell = CompareUtils.findBest(activeSummaries, (item) => item.topSellPrice);
     final rankedByBuy = [...activeSummaries]
-      ..sort((a, b) => (_parseCurrencyValue(b.topBuyPrice) ?? 0).compareTo(
-            _parseCurrencyValue(a.topBuyPrice) ?? 0,
-          ));
+      ..sort((a, b) => (CompareUtils.parseCurrencyValue(b.topBuyPrice) ?? 0)
+          .compareTo(CompareUtils.parseCurrencyValue(a.topBuyPrice) ?? 0));
     final rankedBySell = [...activeSummaries]
-      ..sort((a, b) => (_parseCurrencyValue(b.topSellPrice) ?? 0).compareTo(
-            _parseCurrencyValue(a.topSellPrice) ?? 0,
-          ));
+      ..sort((a, b) => (CompareUtils.parseCurrencyValue(b.topSellPrice) ?? 0)
+          .compareTo(CompareUtils.parseCurrencyValue(a.topSellPrice) ?? 0));
 
     return Scaffold(
       appBar: AppBar(
@@ -216,42 +215,6 @@ class _CompareScreenState extends State<CompareScreen> {
       ),
     );
   }
-
-  ProviderSummary? _findBest(
-    List<ProviderSummary> items,
-    String? Function(ProviderSummary item) selector,
-  ) {
-    ProviderSummary? best;
-    int? bestValue;
-
-    for (final item in items) {
-      final raw = selector(item);
-      final parsed = _parseCurrencyValue(raw);
-      if (parsed == null) {
-        continue;
-      }
-
-      if (bestValue == null || parsed > bestValue) {
-        best = item;
-        bestValue = parsed;
-      }
-    }
-
-    return best;
-  }
-
-  int? _parseCurrencyValue(String? raw) {
-    if (raw == null || raw.trim().isEmpty) {
-      return null;
-    }
-
-    final digitsOnly = raw.replaceAll(RegExp(r'[^0-9]'), '');
-    if (digitsOnly.isEmpty) {
-      return null;
-    }
-
-    return int.tryParse(digitsOnly);
-  }
 }
 
 class _CompareHeroCard extends StatelessWidget {
@@ -296,10 +259,7 @@ class _CompareHeroCard extends StatelessWidget {
             isPremium
                 ? 'Bạn đang mở khóa compare nâng cao. Đây là khu vực có thể tăng giá trị trả phí rõ rệt cho người dùng.'
                 : 'Giúp người dùng nhìn ra nơi mua vào / bán ra nổi bật nhất ngay lập tức. Compare nâng cao sẽ là tính năng premium mạnh để bán về sau.',
-            style: const TextStyle(
-              color: Colors.white70,
-              height: 1.4,
-            ),
+            style: const TextStyle(color: Colors.white70, height: 1.4),
           ),
           const SizedBox(height: 12),
           ElevatedButton.icon(
@@ -478,10 +438,7 @@ class _CompareHighlightCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            title,
-            style: const TextStyle(color: Colors.white60),
-          ),
+          Text(title, style: const TextStyle(color: Colors.white60)),
           const SizedBox(height: 8),
           Text(
             provider,
