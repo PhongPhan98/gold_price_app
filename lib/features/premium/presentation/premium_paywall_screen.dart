@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../models/premium_status.dart';
 import '../models/purchase_result.dart';
-import '../services/entitlement_service.dart';
+import '../services/premium_state_controller.dart';
 import '../services/purchase_service_factory.dart';
 import '../services/purchase_service.dart';
 
@@ -15,7 +15,7 @@ class PremiumPaywallScreen extends StatefulWidget {
 
 class _PremiumPaywallScreenState extends State<PremiumPaywallScreen> {
   final PurchaseService _purchaseService = PurchaseServiceFactory.create(useMock: true);
-  final EntitlementService _entitlementService = EntitlementService();
+  final PremiumStateController _premiumStateController = PremiumStateController();
 
   PremiumStatus _currentStatus = const PremiumStatus(
     plan: PremiumPlan.free,
@@ -36,7 +36,8 @@ class _PremiumPaywallScreenState extends State<PremiumPaywallScreen> {
       _statusMessage = 'Đang kiểm tra entitlement premium...';
     });
 
-    final status = await _entitlementService.refreshStatus();
+    await _premiumStateController.refresh();
+    final status = _premiumStateController.status;
     if (!mounted) {
       return;
     }
@@ -71,7 +72,8 @@ class _PremiumPaywallScreenState extends State<PremiumPaywallScreen> {
       return;
     }
 
-    final refreshedStatus = await _entitlementService.refreshStatus();
+    await _premiumStateController.refresh();
+    final refreshedStatus = _premiumStateController.status;
     if (!mounted) {
       return;
     }

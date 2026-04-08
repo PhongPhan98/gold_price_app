@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../premium/services/entitlement_service.dart';
+import '../../premium/services/premium_state_controller.dart';
 import '../../premium/models/premium_status.dart';
 import '../../premium/presentation/premium_paywall_screen.dart';
 import '../data/price_alert_storage.dart';
@@ -16,7 +16,7 @@ class AlertsScreen extends StatefulWidget {
 class _AlertsScreenState extends State<AlertsScreen> {
   final PriceAlertStorage _storage = PriceAlertStorage();
   final TextEditingController _targetPriceController = TextEditingController();
-  final EntitlementService _entitlementService = EntitlementService();
+  final PremiumStateController _premiumStateController = PremiumStateController();
 
   List<PriceAlert> _alerts = [];
   String _selectedProvider = 'Mi Hồng';
@@ -34,7 +34,8 @@ class _AlertsScreenState extends State<AlertsScreen> {
 
   Future<void> _loadScreenData() async {
     final alerts = await _storage.loadAlerts();
-    final premiumStatus = await _entitlementService.refreshStatus();
+    await _premiumStateController.refresh();
+    final premiumStatus = _premiumStateController.status;
     if (!mounted) {
       return;
     }

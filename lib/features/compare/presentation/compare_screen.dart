@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../home/models/provider_summary.dart';
 import '../../home/widgets/summary_badge.dart';
-import '../../premium/services/entitlement_service.dart';
+import '../../premium/services/premium_state_controller.dart';
 import '../../premium/models/premium_status.dart';
 import '../../premium/presentation/premium_paywall_screen.dart';
 
@@ -19,7 +19,7 @@ class CompareScreen extends StatefulWidget {
 }
 
 class _CompareScreenState extends State<CompareScreen> {
-  final EntitlementService _entitlementService = EntitlementService();
+  final PremiumStateController _premiumStateController = PremiumStateController();
   PremiumStatus _premiumStatus = const PremiumStatus(
     plan: PremiumPlan.free,
     isActive: false,
@@ -32,7 +32,8 @@ class _CompareScreenState extends State<CompareScreen> {
   }
 
   Future<void> _loadPremiumStatus() async {
-    final status = await _entitlementService.refreshStatus();
+    await _premiumStateController.refresh();
+    final status = _premiumStateController.status;
     if (!mounted) {
       return;
     }
