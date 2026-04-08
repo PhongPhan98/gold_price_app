@@ -6,6 +6,7 @@ import '../../compare/presentation/compare_screen.dart';
 import '../../gold_prices/presentation/baotinminhchau_gold_price_page.dart';
 import '../../gold_prices/presentation/doji_gold_price_page.dart';
 import '../../gold_prices/presentation/mihong_gold_price_page.dart';
+import '../../history/presentation/history_screen.dart';
 import '../data/favorite_provider_storage.dart';
 import '../data/home_summary_service.dart';
 import '../models/provider_summary.dart';
@@ -166,6 +167,17 @@ class _HomeScreenState extends State<HomeScreen> {
             tooltip: 'Nâng cấp Premium',
           ),
           IconButton(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => HistoryScreen(summaries: _summaries)),
+              );
+            },
+            icon: const Icon(Icons.insights_outlined),
+            color: const Color.fromARGB(255, 202, 182, 1),
+            tooltip: 'Lịch sử giá',
+          ),
+          IconButton(
             onPressed: _loadSummaries,
             icon: const Icon(Icons.refresh),
             color: const Color.fromARGB(255, 202, 182, 1),
@@ -250,6 +262,16 @@ class _HomeScreenState extends State<HomeScreen> {
                               },
                               icon: const Icon(Icons.add_alert),
                               label: const Text('Thiết lập cảnh báo'),
+                            ),
+                            ElevatedButton.icon(
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(builder: (_) => HistoryScreen(summaries: _summaries)),
+                                );
+                              },
+                              icon: const Icon(Icons.insights_outlined),
+                              label: const Text('Xem lịch sử giá'),
                             ),
                           ],
                         ),

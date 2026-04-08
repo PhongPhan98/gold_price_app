@@ -12,5 +12,6 @@ void main() {
     expect(find.byIcon(Icons.workspace_premium_outlined), findsOneWidget);
     expect(find.text('Mở màn hình so sánh nhanh'), findsOneWidget);
     expect(find.text('Thiết lập cảnh báo'), findsOneWidget);
+    expect(find.text('Xem lịch sử giá'), findsOneWidget);
   });
 }
