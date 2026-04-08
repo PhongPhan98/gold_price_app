@@ -132,3 +132,5 @@ flutter build apk --debug
 ### Billing product ids (prep)
 - `gold_price_pro_monthly`
 - `gold_price_pro_yearly`
+
+- Purchase result states: success / cancelled / pending / error

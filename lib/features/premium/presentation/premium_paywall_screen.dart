@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../models/premium_status.dart';
+import '../models/purchase_result.dart';
 import '../services/mock_purchase_service.dart';
 import '../services/purchase_service.dart';
 
@@ -52,22 +53,33 @@ class _PremiumPaywallScreenState extends State<PremiumPaywallScreen> {
       _statusMessage = 'Đang xử lý gói ${plan.name}...';
     });
 
-    final status = await _purchaseService.purchase(plan);
+    final result = await _purchaseService.purchase(plan);
     if (!mounted) {
       return;
     }
 
     setState(() {
-      _currentStatus = status;
+      _currentStatus = result.premiumStatus;
       _isLoading = false;
-      _statusMessage = plan == PremiumPlan.proMonthly
-          ? 'Đã kích hoạt gói Pro Monthly (mock).'
-          : 'Đã kích hoạt gói Pro Yearly (mock).';
+      _statusMessage = result.message ?? _messageForResult(result.status);
     });
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(_statusMessage!)),
     );
+  }
+
+  String _messageForResult(PurchaseResultStatus status) {
+    switch (status) {
+      case PurchaseResultStatus.success:
+        return 'Mua gói thành công.';
+      case PurchaseResultStatus.cancelled:
+        return 'Người dùng đã hủy giao dịch.';
+      case PurchaseResultStatus.pending:
+        return 'Giao dịch đang chờ xử lý.';
+      case PurchaseResultStatus.error:
+        return 'Có lỗi xảy ra khi xử lý thanh toán.';
+    }
   }
 
   @override
@@ -203,6 +215,7 @@ class _PremiumPaywallScreenState extends State<PremiumPaywallScreen> {
                   Text('• Restore purchase path đã có skeleton', style: TextStyle(color: Colors.white70)),
                   Text('• Có loading/state message để chuẩn bị cho flow billing thật', style: TextStyle(color: Colors.white70)),
                   Text('• Product ids đã được cấu hình để chuẩn bị nối billing thật', style: TextStyle(color: Colors.white70)),
+                  Text('• Purchase result states đã sẵn sàng cho success/cancel/pending/error', style: TextStyle(color: Colors.white70)),
                 ],
               ),
             ),
