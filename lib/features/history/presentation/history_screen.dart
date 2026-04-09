@@ -5,6 +5,7 @@ import '../../premium/models/premium_status.dart';
 import '../../premium/presentation/premium_paywall_screen.dart';
 import '../../premium/services/premium_state_controller.dart';
 import '../models/price_history_point.dart';
+import '../utils/history_provider_utils.dart';
 import '../utils/history_sample_generator.dart';
 import '../utils/history_trend_utils.dart';
 
@@ -22,14 +23,18 @@ class HistoryScreen extends StatefulWidget {
 
 class _HistoryScreenState extends State<HistoryScreen> {
   final PremiumStateController _premiumStateController = PremiumStateController();
+  late final List<ProviderSummary> _providers;
+
   PremiumStatus _premiumStatus = const PremiumStatus(
     plan: PremiumPlan.free,
     isActive: false,
   );
+  int _selectedProviderIndex = 0;
 
   @override
   void initState() {
     super.initState();
+    _providers = HistoryProviderUtils.ensureProviders(widget.summaries);
     _loadPremiumStatus();
   }
 
@@ -52,12 +57,9 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final firstSummary = widget.summaries.isNotEmpty ? widget.summaries.first : null;
-    final providerName = firstSummary?.title ?? 'Nguồn mặc định';
-    final baseValue = double.tryParse(
-          (firstSummary?.topBuyPrice ?? '0').replaceAll(RegExp(r'[^0-9]'), ''),
-        ) ??
-        95000000;
+    final selectedProvider = _providers[_selectedProviderIndex];
+    final providerName = selectedProvider.title;
+    final baseValue = HistoryProviderUtils.resolveBaseValue(selectedProvider);
     final sampleHistory = HistorySampleGenerator.generateFromBase(
       baseValue: baseValue,
       prefixLabel: 'D',
@@ -103,6 +105,41 @@ class _HistoryScreenState extends State<HistoryScreen> {
                     ),
                   ),
                   const SizedBox(height: 10),
+                  const Text(
+                    'Chọn nhà cung cấp để xem trend riêng theo nguồn.',
+                    style: TextStyle(color: Colors.white70, height: 1.4),
+                  ),
+                  const SizedBox(height: 12),
+                  DropdownButtonFormField<int>(
+                    initialValue: _selectedProviderIndex,
+                    dropdownColor: Colors.black87,
+                    key: ValueKey(_selectedProviderIndex),
+                    decoration: InputDecoration(
+                      labelText: 'Nhà cung cấp',
+                      labelStyle: const TextStyle(color: Colors.white70),
+                      filled: true,
+                      fillColor: Colors.white.withValues(alpha: 0.05),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    style: const TextStyle(color: Colors.white),
+                    items: _providers.asMap().entries.map((entry) {
+                      return DropdownMenuItem<int>(
+                        value: entry.key,
+                        child: Text(entry.value.title),
+                      );
+                    }).toList(),
+                    onChanged: (value) {
+                      if (value == null) {
+                        return;
+                      }
+                      setState(() {
+                        _selectedProviderIndex = value;
+                      });
+                    },
+                  ),
+                  const SizedBox(height: 12),
                   Text(
                     'Nguồn đang xem: $providerName',
                     style: const TextStyle(
@@ -113,7 +150,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                   const SizedBox(height: 10),
                   Text(
                     _premiumStatus.isPremium
-                        ? 'Bạn đang mở khóa nền tảng lịch sử giá. Đây sẽ là một trong những premium feature mạnh nhất để giữ chân người dùng.'
+                        ? 'Bạn đang mở khóa nền tảng lịch sử giá. Đây là lợi thế mạnh để theo dõi biến động theo từng nguồn.'
                         : 'Lịch sử giá và xu hướng là premium feature định hướng ra quyết định tốt hơn. Free tier hiện chỉ xem được bản xem trước.',
                     style: const TextStyle(color: Colors.white70, height: 1.4),
                   ),
