@@ -6,6 +6,7 @@ import '../../premium/presentation/premium_paywall_screen.dart';
 import '../../premium/services/premium_state_controller.dart';
 import '../models/history_range.dart';
 import '../models/price_history_point.dart';
+import '../utils/history_premium_copy.dart';
 import '../utils/history_provider_utils.dart';
 import '../utils/history_sample_generator.dart';
 import '../utils/history_trend_utils.dart';
@@ -84,6 +85,16 @@ class _HistoryScreenState extends State<HistoryScreen> {
     );
     final insight = HistoryTrendUtils.buildTrendInsight(
       sampleHistory,
+      isPremium: _premiumStatus.isPremium,
+    );
+    final rangeValueMessage = HistoryPremiumCopy.buildRangeValueMessage(
+      range: _selectedRange,
+      isPremium: _premiumStatus.isPremium,
+    );
+    final valueBullets = HistoryPremiumCopy.buildValueBullets(
+      isPremium: _premiumStatus.isPremium,
+    );
+    final retentionPrompt = HistoryPremiumCopy.buildRetentionPrompt(
       isPremium: _premiumStatus.isPremium,
     );
 
@@ -194,10 +205,46 @@ class _HistoryScreenState extends State<HistoryScreen> {
                   ),
                   const SizedBox(height: 10),
                   Text(
-                    _premiumStatus.isPremium
-                        ? 'Bạn đang mở khóa nền tảng lịch sử giá. Đây là lợi thế mạnh để theo dõi biến động theo từng nguồn và từng khung thời gian.'
-                        : 'Lịch sử giá và xu hướng là premium feature định hướng ra quyết định tốt hơn. Free tier hiện giới hạn 7 ngày.',
+                    rangeValueMessage,
                     style: const TextStyle(color: Colors.white70, height: 1.4),
+                  ),
+                  const SizedBox(height: 12),
+                  ...valueBullets.map((bullet) {
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 6),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Icon(
+                            _premiumStatus.isPremium
+                                ? Icons.check_circle_outline
+                                : Icons.star_outline,
+                            size: 18,
+                            color: _premiumStatus.isPremium
+                                ? Colors.greenAccent
+                                : Colors.orangeAccent,
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              bullet,
+                              style: const TextStyle(color: Colors.white70, height: 1.3),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }),
+                  const SizedBox(height: 10),
+                  Text(
+                    retentionPrompt,
+                    style: TextStyle(
+                      color: _premiumStatus.isPremium
+                          ? Colors.greenAccent
+                          : Colors.orangeAccent,
+                      fontStyle: FontStyle.italic,
+                      height: 1.4,
+                    ),
                   ),
                   const SizedBox(height: 14),
                   ElevatedButton.icon(
