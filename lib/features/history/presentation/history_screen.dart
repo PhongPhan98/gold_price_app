@@ -4,6 +4,7 @@ import '../../home/models/provider_summary.dart';
 import '../../premium/models/premium_status.dart';
 import '../../premium/presentation/premium_paywall_screen.dart';
 import '../../premium/services/premium_state_controller.dart';
+import '../models/history_range.dart';
 import '../models/price_history_point.dart';
 import '../utils/history_provider_utils.dart';
 import '../utils/history_sample_generator.dart';
@@ -30,6 +31,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
     isActive: false,
   );
   int _selectedProviderIndex = 0;
+  HistoryRange _selectedRange = HistoryRange.sevenDays;
 
   @override
   void initState() {
@@ -55,6 +57,21 @@ class _HistoryScreenState extends State<HistoryScreen> {
     ).then((_) => _loadPremiumStatus());
   }
 
+  void _onRangeChanged(HistoryRange? value) {
+    if (value == null) {
+      return;
+    }
+
+    if (value.premiumRequired && !_premiumStatus.isPremium) {
+      _openPremiumPaywall();
+      return;
+    }
+
+    setState(() {
+      _selectedRange = value;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final selectedProvider = _providers[_selectedProviderIndex];
@@ -63,8 +80,12 @@ class _HistoryScreenState extends State<HistoryScreen> {
     final sampleHistory = HistorySampleGenerator.generateFromBase(
       baseValue: baseValue,
       prefixLabel: 'D',
+      range: _selectedRange,
     );
-    final insight = HistoryTrendUtils.buildTrendInsight(sampleHistory);
+    final insight = HistoryTrendUtils.buildTrendInsight(
+      sampleHistory,
+      isPremium: _premiumStatus.isPremium,
+    );
 
     return Scaffold(
       appBar: AppBar(
@@ -140,8 +161,32 @@ class _HistoryScreenState extends State<HistoryScreen> {
                     },
                   ),
                   const SizedBox(height: 12),
+                  DropdownButtonFormField<HistoryRange>(
+                    initialValue: _selectedRange,
+                    dropdownColor: Colors.black87,
+                    key: ValueKey(_selectedRange),
+                    decoration: InputDecoration(
+                      labelText: 'Khoảng thời gian',
+                      labelStyle: const TextStyle(color: Colors.white70),
+                      filled: true,
+                      fillColor: Colors.white.withValues(alpha: 0.05),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    style: const TextStyle(color: Colors.white),
+                    items: HistoryRange.values.map((range) {
+                      final premiumTag = range.premiumRequired ? ' (Premium)' : '';
+                      return DropdownMenuItem<HistoryRange>(
+                        value: range,
+                        child: Text('${range.label}$premiumTag'),
+                      );
+                    }).toList(),
+                    onChanged: _onRangeChanged,
+                  ),
+                  const SizedBox(height: 12),
                   Text(
-                    'Nguồn đang xem: $providerName',
+                    'Nguồn đang xem: $providerName • Dải: ${_selectedRange.label}',
                     style: const TextStyle(
                       color: Colors.white70,
                       fontWeight: FontWeight.bold,
@@ -150,8 +195,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
                   const SizedBox(height: 10),
                   Text(
                     _premiumStatus.isPremium
-                        ? 'Bạn đang mở khóa nền tảng lịch sử giá. Đây là lợi thế mạnh để theo dõi biến động theo từng nguồn.'
-                        : 'Lịch sử giá và xu hướng là premium feature định hướng ra quyết định tốt hơn. Free tier hiện chỉ xem được bản xem trước.',
+                        ? 'Bạn đang mở khóa nền tảng lịch sử giá. Đây là lợi thế mạnh để theo dõi biến động theo từng nguồn và từng khung thời gian.'
+                        : 'Lịch sử giá và xu hướng là premium feature định hướng ra quyết định tốt hơn. Free tier hiện giới hạn 7 ngày.',
                     style: const TextStyle(color: Colors.white70, height: 1.4),
                   ),
                   const SizedBox(height: 14),
@@ -203,7 +248,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                   if (!_premiumStatus.isPremium) ...[
                     const SizedBox(height: 10),
                     const Text(
-                      'Premium sẽ mở khóa insight mạnh hơn, nhiều mốc thời gian hơn và khả năng đọc xu hướng sâu hơn.',
+                      'Premium sẽ mở khóa insight mạnh hơn, dải 30/90 ngày và khả năng đọc xu hướng sâu hơn.',
                       style: TextStyle(color: Colors.white60, height: 1.4),
                     ),
                   ],
@@ -233,7 +278,7 @@ class _HistoryPreviewCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final visiblePoints = isPremium ? points : points.take(3).toList();
+    final visiblePoints = isPremium ? points : points.take(7).toList();
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -246,7 +291,7 @@ class _HistoryPreviewCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            isPremium ? 'Dữ liệu xu hướng mở rộng' : 'Bản xem trước xu hướng',
+            isPremium ? 'Dữ liệu xu hướng mở rộng' : 'Bản xem trước xu hướng (7 ngày)',
             style: const TextStyle(
               color: Colors.white,
               fontSize: 20,
@@ -260,7 +305,7 @@ class _HistoryPreviewCard extends StatelessWidget {
               child: Row(
                 children: [
                   SizedBox(
-                    width: 48,
+                    width: 58,
                     child: Text(
                       point.label,
                       style: const TextStyle(color: Colors.white60),
@@ -299,7 +344,7 @@ class _HistoryPreviewCard extends StatelessWidget {
           if (!isPremium) ...[
             const SizedBox(height: 12),
             const Text(
-              'Premium sẽ mở khóa thêm mốc thời gian, xu hướng dài hơn và insight tốt hơn.',
+              'Premium sẽ mở khóa thêm mốc thời gian 30/90 ngày, xu hướng dài hơn và insight tốt hơn.',
               style: TextStyle(color: Colors.orangeAccent, height: 1.4),
             ),
           ],

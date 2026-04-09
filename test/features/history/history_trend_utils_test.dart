@@ -4,30 +4,40 @@ import 'package:gia_vang_hom_nay/features/history/utils/history_trend_utils.dart
 
 void main() {
   group('HistoryTrendUtils', () {
-    test('returns rising insight when last value is higher', () {
+    test('returns free-tier teaser insight when not premium', () {
       const points = [
         PriceHistoryPoint(label: 'D-1', value: 100),
         PriceHistoryPoint(label: 'D-2', value: 105),
       ];
 
-      final insight = HistoryTrendUtils.buildTrendInsight(points);
-      expect(insight.contains('tăng'), isTrue);
+      final insight = HistoryTrendUtils.buildTrendInsight(
+        points,
+        isPremium: false,
+      );
+      expect(insight.contains('Premium'), isTrue);
     });
 
-    test('returns falling insight when last value is lower', () {
+    test('returns richer premium insight when premium is active', () {
       const points = [
-        PriceHistoryPoint(label: 'D-1', value: 105),
-        PriceHistoryPoint(label: 'D-2', value: 100),
+        PriceHistoryPoint(label: 'D-1', value: 100),
+        PriceHistoryPoint(label: 'D-2', value: 105),
       ];
 
-      final insight = HistoryTrendUtils.buildTrendInsight(points);
-      expect(insight.contains('giảm'), isTrue);
+      final insight = HistoryTrendUtils.buildTrendInsight(
+        points,
+        isPremium: true,
+      );
+      expect(insight.contains('Phân tích Premium'), isTrue);
+      expect(insight.contains('%'), isTrue);
     });
 
     test('returns insufficient-data message when not enough points', () {
       const points = [PriceHistoryPoint(label: 'D-1', value: 100)];
 
-      final insight = HistoryTrendUtils.buildTrendInsight(points);
+      final insight = HistoryTrendUtils.buildTrendInsight(
+        points,
+        isPremium: true,
+      );
       expect(insight.contains('Chưa đủ dữ liệu'), isTrue);
     });
   });

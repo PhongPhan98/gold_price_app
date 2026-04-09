@@ -1,18 +1,28 @@
+import '../models/history_range.dart';
 import '../models/price_history_point.dart';
 
 class HistorySampleGenerator {
   static List<PriceHistoryPoint> generateFromBase({
     required double baseValue,
     required String prefixLabel,
+    HistoryRange range = HistoryRange.sevenDays,
   }) {
-    final adjustments = <double>[-0.8, -0.3, 0.2, 0.0, 0.6, 1.1, 0.7];
-    return adjustments.asMap().entries.map((entry) {
-      final index = entry.key;
-      final delta = entry.value;
-      return PriceHistoryPoint(
-        label: '$prefixLabel-${index + 1}',
-        value: baseValue + delta,
+    final points = <PriceHistoryPoint>[];
+    final count = range.pointCount;
+
+    for (var i = 0; i < count; i++) {
+      final oscillation = (i % 6 - 2) * 0.35;
+      final momentum = i * 0.08;
+      final value = baseValue + oscillation + momentum;
+
+      points.add(
+        PriceHistoryPoint(
+          label: '$prefixLabel-${i + 1}',
+          value: value,
+        ),
       );
-    }).toList();
+    }
+
+    return points;
   }
 }
