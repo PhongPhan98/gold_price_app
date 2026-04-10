@@ -27,6 +27,9 @@ void main() {
 
       expect(transport.sent, ['batch-1', 'batch-2']);
       expect(sender.pendingCount, 0);
+      expect(sender.stats.sentBatches, 2);
+      expect(sender.stats.failedBatches, 0);
+      expect(sender.stats.retryAttempts, 0);
     });
 
     test('retries failed batch with backoff and succeeds', () async {
@@ -47,6 +50,9 @@ void main() {
       expect(delays.length, 2);
       expect(delays[0], const Duration(milliseconds: 100));
       expect(delays[1], const Duration(milliseconds: 200));
+      expect(sender.stats.retryAttempts, 2);
+      expect(sender.stats.sentBatches, 1);
+      expect(sender.stats.failedBatches, 0);
     });
 
     test('keeps batch pending when retries are exhausted', () async {
@@ -62,11 +68,15 @@ void main() {
 
       expect(transport.sent, isEmpty);
       expect(sender.pendingCount, 1);
+      expect(sender.stats.failedBatches, 1);
+      expect(sender.stats.retryAttempts, 1);
 
       transport.failuresRemaining = 0;
       await sender.flush();
       expect(transport.sent, ['batch-1']);
       expect(sender.pendingCount, 0);
+      expect(sender.stats.sentBatches, 1);
+      expect(sender.stats.failedBatches, 1);
     });
   });
 }

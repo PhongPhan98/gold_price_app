@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'history_upsell_batch_transport.dart';
+import 'history_upsell_delivery_stats.dart';
 
 class HistoryUpsellBatchSender {
   HistoryUpsellBatchSender({
@@ -18,7 +19,18 @@ class HistoryUpsellBatchSender {
   final List<String> _pendingBatches = [];
   bool _isSending = false;
 
+  int _sentBatches = 0;
+  int _failedBatches = 0;
+  int _retryAttempts = 0;
+
   int get pendingCount => _pendingBatches.length;
+
+  HistoryUpsellDeliveryStats get stats => HistoryUpsellDeliveryStats(
+        sentBatches: _sentBatches,
+        failedBatches: _failedBatches,
+        retryAttempts: _retryAttempts,
+        pendingBatches: pendingCount,
+      );
 
   Future<void> enqueue(String jsonBatch) async {
     _pendingBatches.add(jsonBatch);
@@ -39,7 +51,9 @@ class HistoryUpsellBatchSender {
 
         if (delivered) {
           _pendingBatches.removeAt(0);
+          _sentBatches += 1;
         } else {
+          _failedBatches += 1;
           break;
         }
       }
@@ -60,6 +74,7 @@ class HistoryUpsellBatchSender {
           return false;
         }
 
+        _retryAttempts += 1;
         final delay = _buildDelay(attempt);
         if (sleep != null) {
           await sleep!(delay);
