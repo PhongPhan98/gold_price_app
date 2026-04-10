@@ -7,7 +7,7 @@ import '../../premium/models/premium_status.dart';
 import '../../premium/presentation/premium_paywall_screen.dart';
 import '../../premium/services/premium_state_controller.dart';
 import '../analytics/history_upsell_event_storage.dart';
-import '../analytics/history_upsell_export_adapter.dart';
+import '../analytics/history_upsell_export_adapter_factory.dart';
 import '../analytics/history_upsell_tracker.dart';
 import '../models/history_range.dart';
 import '../models/price_history_point.dart';
@@ -32,7 +32,7 @@ class _HistoryScreenState extends State<HistoryScreen> with WidgetsBindingObserv
   final PremiumStateController _premiumStateController = PremiumStateController();
   final HistoryUpsellTracker _upsellTracker = HistoryUpsellTracker(
     storage: SharedPrefsHistoryUpsellEventStorage(),
-    exportAdapter: const NoopHistoryUpsellExportAdapter(),
+    exportAdapter: createHistoryUpsellExportAdapter(),
     flushThreshold: 8,
   );
   late final List<ProviderSummary> _providers;
