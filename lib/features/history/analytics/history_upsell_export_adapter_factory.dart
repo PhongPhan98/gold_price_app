@@ -40,6 +40,12 @@ HistoryUpsellBatchSender? _createDefaultBatchSenderFromEnv() {
     return null;
   }
 
+  const authToken = String.fromEnvironment('HISTORY_ANALYTICS_AUTH_TOKEN');
+  const authScheme = String.fromEnvironment(
+    'HISTORY_ANALYTICS_AUTH_SCHEME',
+    defaultValue: 'Bearer',
+  );
+
   return HistoryUpsellBatchSender(
     transport: HttpHistoryUpsellBatchTransport(
       endpoint: uri,
@@ -47,7 +53,11 @@ HistoryUpsellBatchSender? _createDefaultBatchSenderFromEnv() {
       headers: const {
         'X-Analytics-Source': 'gold_price_app',
       },
+      authToken: authToken.isEmpty ? null : authToken,
+      authScheme: authScheme,
     ),
+    maxRetries: 3,
+    baseRetryDelay: const Duration(milliseconds: 250),
   );
 }
 

@@ -4,12 +4,12 @@ import 'package:gia_vang_hom_nay/features/history/analytics/history_upsell_batch
 
 class _FakeBatchTransport implements HistoryUpsellBatchTransport {
   final List<String> sent = [];
-  bool failNext = false;
+  int failuresRemaining = 0;
 
   @override
   Future<void> sendBatch(String jsonBatch) async {
-    if (failNext) {
-      failNext = false;
+    if (failuresRemaining > 0) {
+      failuresRemaining -= 1;
       throw Exception('temporary failure');
     }
     sent.add(jsonBatch);
@@ -29,14 +29,41 @@ void main() {
       expect(sender.pendingCount, 0);
     });
 
-    test('keeps failed batch and retries later', () async {
-      final transport = _FakeBatchTransport()..failNext = true;
-      final sender = HistoryUpsellBatchSender(transport: transport);
+    test('retries failed batch with backoff and succeeds', () async {
+      final transport = _FakeBatchTransport()..failuresRemaining = 2;
+      final delays = <Duration>[];
+
+      final sender = HistoryUpsellBatchSender(
+        transport: transport,
+        maxRetries: 3,
+        baseRetryDelay: const Duration(milliseconds: 100),
+        sleep: (delay) async => delays.add(delay),
+      );
 
       await sender.enqueue('batch-1');
-      expect(sender.pendingCount, 1);
-      expect(transport.sent, isEmpty);
 
+      expect(transport.sent, ['batch-1']);
+      expect(sender.pendingCount, 0);
+      expect(delays.length, 2);
+      expect(delays[0], const Duration(milliseconds: 100));
+      expect(delays[1], const Duration(milliseconds: 200));
+    });
+
+    test('keeps batch pending when retries are exhausted', () async {
+      final transport = _FakeBatchTransport()..failuresRemaining = 10;
+      final sender = HistoryUpsellBatchSender(
+        transport: transport,
+        maxRetries: 1,
+        baseRetryDelay: const Duration(milliseconds: 50),
+        sleep: (_) async {},
+      );
+
+      await sender.enqueue('batch-1');
+
+      expect(transport.sent, isEmpty);
+      expect(sender.pendingCount, 1);
+
+      transport.failuresRemaining = 0;
       await sender.flush();
       expect(transport.sent, ['batch-1']);
       expect(sender.pendingCount, 0);

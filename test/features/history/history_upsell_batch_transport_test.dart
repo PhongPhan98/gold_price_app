@@ -25,6 +25,26 @@ void main() {
       expect(captured.headers['Content-Type']!.startsWith('application/json'), isTrue);
     });
 
+    test('adds authorization header when token is provided', () async {
+      late http.Request captured;
+
+      final client = MockClient((request) async {
+        captured = request;
+        return http.Response('{}', 200);
+      });
+
+      final transport = HttpHistoryUpsellBatchTransport(
+        endpoint: Uri.parse('https://example.com/analytics'),
+        client: client,
+        authToken: 'abc123',
+        authScheme: 'Token',
+      );
+
+      await transport.sendBatch('[{"type":"screenViewed"}]');
+
+      expect(captured.headers['Authorization'], 'Token abc123');
+    });
+
     test('throws when endpoint returns failure status', () async {
       final client = MockClient((request) async => http.Response('error', 500));
 
