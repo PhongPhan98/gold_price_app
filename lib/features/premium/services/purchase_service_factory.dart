@@ -7,6 +7,6 @@ class PurchaseServiceFactory {
     if (useMock) {
       return MockPurchaseService();
     }
-    return const StorePurchaseService();
+    return StorePurchaseService();
   }
 }

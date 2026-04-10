@@ -14,7 +14,7 @@ class PremiumPaywallScreen extends StatefulWidget {
 }
 
 class _PremiumPaywallScreenState extends State<PremiumPaywallScreen> {
-  final PurchaseService _purchaseService = PurchaseServiceFactory.create(useMock: true);
+  final PurchaseService _purchaseService = PurchaseServiceFactory.create(useMock: false);
   final PremiumStateController _premiumStateController = PremiumStateController();
 
   PremiumStatus _currentStatus = const PremiumStatus(
