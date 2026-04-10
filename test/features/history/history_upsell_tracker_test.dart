@@ -21,9 +21,13 @@ class _FakeStorage implements HistoryUpsellEventStorage {
 
 class _FakeExportAdapter implements HistoryUpsellExportAdapter {
   List<HistoryUpsellEvent> exported = [];
+  bool shouldThrow = false;
 
   @override
   Future<void> exportEvents(List<HistoryUpsellEvent> events) async {
+    if (shouldThrow) {
+      throw Exception('temporary export failure');
+    }
     exported = List<HistoryUpsellEvent>.from(events);
   }
 }
@@ -78,9 +82,52 @@ void main() {
       await tracker.initialize();
       await tracker.exportNow();
 
-      expect(tracker.events.length, 1);
+      expect(tracker.events.length, 0);
       expect(exporter.exported.length, 1);
       expect(exporter.exported.first.provider, 'DOJI');
+      expect(storage.saved, isEmpty);
+    });
+
+    test('keeps events for retry when export fails', () async {
+      final storage = _FakeStorage();
+      final exporter = _FakeExportAdapter()..shouldThrow = true;
+      final tracker = HistoryUpsellTracker(
+        storage: storage,
+        exportAdapter: exporter,
+      );
+
+      tracker.trackPremiumCtaTapped(
+        range: HistoryRange.thirtyDays,
+        provider: 'BTMC',
+      );
+
+      await expectLater(tracker.exportNow(), throwsException);
+      expect(tracker.events.length, 1);
+      expect(storage.saved.length, 1);
+
+      exporter.shouldThrow = false;
+      await tracker.exportNow();
+      expect(tracker.events, isEmpty);
+      expect(storage.saved, isEmpty);
+    });
+
+    test('caps queue and keeps latest events only', () async {
+      final storage = _FakeStorage();
+      final tracker = HistoryUpsellTracker(
+        storage: storage,
+        maxQueueSize: 2,
+      );
+
+      tracker.trackScreenViewed(range: HistoryRange.sevenDays, provider: 'A');
+      tracker.trackScreenViewed(range: HistoryRange.sevenDays, provider: 'B');
+      tracker.trackScreenViewed(range: HistoryRange.sevenDays, provider: 'C');
+
+      await Future<void>.delayed(Duration.zero);
+
+      expect(tracker.events.length, 2);
+      expect(tracker.events[0].provider, 'B');
+      expect(tracker.events[1].provider, 'C');
+      expect(storage.saved.length, 2);
     });
   });
 }

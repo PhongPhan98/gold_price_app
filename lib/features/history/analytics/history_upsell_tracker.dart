@@ -9,12 +9,15 @@ class HistoryUpsellTracker {
   HistoryUpsellTracker({
     this.storage,
     this.exportAdapter,
+    this.maxQueueSize = 100,
   });
 
   final HistoryUpsellEventStorage? storage;
   final HistoryUpsellExportAdapter? exportAdapter;
+  final int maxQueueSize;
 
   final List<HistoryUpsellEvent> _events = [];
+  bool _exportInProgress = false;
 
   List<HistoryUpsellEvent> get events => List.unmodifiable(_events);
 
@@ -27,6 +30,8 @@ class HistoryUpsellTracker {
     _events
       ..clear()
       ..addAll(loaded);
+    _enforceQueueCap();
+    await _persist();
   }
 
   void trackScreenViewed({
@@ -72,18 +77,52 @@ class HistoryUpsellTracker {
   }
 
   Future<void> exportNow() async {
-    if (exportAdapter == null) {
+    if (exportAdapter == null || _events.isEmpty || _exportInProgress) {
       return;
     }
 
-    await exportAdapter!.exportEvents(events);
+    _exportInProgress = true;
+    final snapshot = List<HistoryUpsellEvent>.from(_events);
+
+    try {
+      await exportAdapter!.exportEvents(snapshot);
+
+      final removeCount = snapshot.length <= _events.length
+          ? snapshot.length
+          : _events.length;
+      _events.removeRange(0, removeCount);
+      await _persist();
+    } finally {
+      _exportInProgress = false;
+    }
   }
 
   void _push(HistoryUpsellEvent event) {
     _events.add(event);
+    _enforceQueueCap();
 
-    if (storage != null) {
-      unawaited(storage!.saveEvents(events));
+    unawaited(_persist());
+  }
+
+  void _enforceQueueCap() {
+    if (maxQueueSize <= 0) {
+      _events.clear();
+      return;
     }
+
+    if (_events.length <= maxQueueSize) {
+      return;
+    }
+
+    final overflow = _events.length - maxQueueSize;
+    _events.removeRange(0, overflow);
+  }
+
+  Future<void> _persist() async {
+    if (storage == null) {
+      return;
+    }
+
+    await storage!.saveEvents(events);
   }
 }
