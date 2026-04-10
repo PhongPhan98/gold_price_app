@@ -1,12 +1,49 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:gia_vang_hom_nay/features/history/analytics/history_analytics_config.dart';
+import 'package:gia_vang_hom_nay/features/history/analytics/history_upsell_batch_sender.dart';
+import 'package:gia_vang_hom_nay/features/history/analytics/history_upsell_batch_transport.dart';
 import 'package:gia_vang_hom_nay/features/history/analytics/history_upsell_event.dart';
 import 'package:gia_vang_hom_nay/features/history/analytics/history_upsell_export_adapter.dart';
 import 'package:gia_vang_hom_nay/features/history/analytics/history_upsell_export_adapter_factory.dart';
 import 'package:gia_vang_hom_nay/features/history/models/history_range.dart';
 
+class _FakeBatchTransport implements HistoryUpsellBatchTransport {
+  final List<String> sent = [];
+
+  @override
+  Future<void> sendBatch(String jsonBatch) async {
+    sent.add(jsonBatch);
+  }
+}
+
 void main() {
   group('createHistoryUpsellExportAdapter', () {
+
+    test('uses provided batch sender in json mode when callback is omitted', () async {
+      final transport = _FakeBatchTransport();
+      final sender = HistoryUpsellBatchSender(transport: transport);
+
+      final adapter = createHistoryUpsellExportAdapter(
+        config: const HistoryAnalyticsConfig(
+          exportMode: HistoryAnalyticsExportMode.jsonBatch,
+          consoleLogLevel: HistoryUpsellLogLevel.info,
+        ),
+        batchSender: sender,
+      );
+
+      await adapter.exportEvents([
+        HistoryUpsellEvent(
+          type: HistoryUpsellEventType.screenViewed,
+          range: HistoryRange.sevenDays,
+          provider: 'DOJI',
+          timestamp: DateTime.utc(2026, 4, 10),
+        ),
+      ]);
+
+      expect(transport.sent.length, 1);
+      expect(transport.sent.first.contains('screenViewed'), isTrue);
+    });
+
     test('returns console adapter when config is console mode', () async {
       final logs = <String>[];
       final adapter = createHistoryUpsellExportAdapter(
