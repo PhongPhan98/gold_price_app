@@ -10,16 +10,19 @@ class HistoryUpsellTracker {
     this.storage,
     this.exportAdapter,
     this.maxQueueSize = 100,
+    this.flushThreshold = 20,
   });
 
   final HistoryUpsellEventStorage? storage;
   final HistoryUpsellExportAdapter? exportAdapter;
   final int maxQueueSize;
+  final int flushThreshold;
 
   final List<HistoryUpsellEvent> _events = [];
   bool _exportInProgress = false;
 
   List<HistoryUpsellEvent> get events => List.unmodifiable(_events);
+  int get pendingCount => _events.length;
 
   Future<void> initialize() async {
     if (storage == null) {
@@ -102,6 +105,10 @@ class HistoryUpsellTracker {
     _enforceQueueCap();
 
     unawaited(_persist());
+
+    if (flushThreshold > 0 && _events.length >= flushThreshold) {
+      unawaited(exportNow());
+    }
   }
 
   void _enforceQueueCap() {

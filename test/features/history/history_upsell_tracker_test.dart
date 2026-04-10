@@ -22,9 +22,11 @@ class _FakeStorage implements HistoryUpsellEventStorage {
 class _FakeExportAdapter implements HistoryUpsellExportAdapter {
   List<HistoryUpsellEvent> exported = [];
   bool shouldThrow = false;
+  int callCount = 0;
 
   @override
   Future<void> exportEvents(List<HistoryUpsellEvent> events) async {
+    callCount += 1;
     if (shouldThrow) {
       throw Exception('temporary export failure');
     }
@@ -94,6 +96,7 @@ void main() {
       final tracker = HistoryUpsellTracker(
         storage: storage,
         exportAdapter: exporter,
+        flushThreshold: 0,
       );
 
       tracker.trackPremiumCtaTapped(
@@ -128,6 +131,25 @@ void main() {
       expect(tracker.events[0].provider, 'B');
       expect(tracker.events[1].provider, 'C');
       expect(storage.saved.length, 2);
+    });
+
+    test('auto flush triggers when threshold is reached', () async {
+      final storage = _FakeStorage();
+      final exporter = _FakeExportAdapter();
+      final tracker = HistoryUpsellTracker(
+        storage: storage,
+        exportAdapter: exporter,
+        flushThreshold: 2,
+      );
+
+      tracker.trackScreenViewed(range: HistoryRange.sevenDays, provider: 'A');
+      tracker.trackPremiumCtaTapped(range: HistoryRange.thirtyDays, provider: 'A');
+
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+
+      expect(exporter.callCount, 1);
+      expect(tracker.pendingCount, 0);
+      expect(storage.saved, isEmpty);
     });
   });
 }

@@ -28,11 +28,12 @@ class HistoryScreen extends StatefulWidget {
   State<HistoryScreen> createState() => _HistoryScreenState();
 }
 
-class _HistoryScreenState extends State<HistoryScreen> {
+class _HistoryScreenState extends State<HistoryScreen> with WidgetsBindingObserver {
   final PremiumStateController _premiumStateController = PremiumStateController();
   final HistoryUpsellTracker _upsellTracker = HistoryUpsellTracker(
     storage: SharedPrefsHistoryUpsellEventStorage(),
     exportAdapter: const NoopHistoryUpsellExportAdapter(),
+    flushThreshold: 8,
   );
   late final List<ProviderSummary> _providers;
 
@@ -47,8 +48,22 @@ class _HistoryScreenState extends State<HistoryScreen> {
   void initState() {
     super.initState();
     _providers = HistoryProviderUtils.ensureProviders(widget.summaries);
+    WidgetsBinding.instance.addObserver(this);
     _loadPremiumStatus();
     unawaited(_initUpsellTracking());
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      unawaited(_upsellTracker.exportNow());
+    }
   }
 
   Future<void> _initUpsellTracking() async {
@@ -74,7 +89,10 @@ class _HistoryScreenState extends State<HistoryScreen> {
     Navigator.push(
       context,
       MaterialPageRoute(builder: (_) => const PremiumPaywallScreen()),
-    ).then((_) => _loadPremiumStatus());
+    ).then((_) {
+      _loadPremiumStatus();
+      unawaited(_upsellTracker.exportNow());
+    });
   }
 
   void _onRangeChanged(HistoryRange? value) {
