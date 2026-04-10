@@ -4,6 +4,7 @@ import '../../home/models/provider_summary.dart';
 import '../../premium/models/premium_status.dart';
 import '../../premium/presentation/premium_paywall_screen.dart';
 import '../../premium/services/premium_state_controller.dart';
+import '../analytics/history_upsell_tracker.dart';
 import '../models/history_range.dart';
 import '../models/price_history_point.dart';
 import '../utils/history_premium_copy.dart';
@@ -25,6 +26,7 @@ class HistoryScreen extends StatefulWidget {
 
 class _HistoryScreenState extends State<HistoryScreen> {
   final PremiumStateController _premiumStateController = PremiumStateController();
+  final HistoryUpsellTracker _upsellTracker = HistoryUpsellTracker();
   late final List<ProviderSummary> _providers;
 
   PremiumStatus _premiumStatus = const PremiumStatus(
@@ -39,6 +41,11 @@ class _HistoryScreenState extends State<HistoryScreen> {
     super.initState();
     _providers = HistoryProviderUtils.ensureProviders(widget.summaries);
     _loadPremiumStatus();
+    final firstProvider = _providers.first.title;
+    _upsellTracker.trackScreenViewed(
+      range: _selectedRange,
+      provider: firstProvider,
+    );
   }
 
   Future<void> _loadPremiumStatus() async {
@@ -64,6 +71,11 @@ class _HistoryScreenState extends State<HistoryScreen> {
     }
 
     if (value.premiumRequired && !_premiumStatus.isPremium) {
+      final provider = _providers[_selectedProviderIndex].title;
+      _upsellTracker.trackPremiumRangeTapped(
+        range: value,
+        provider: provider,
+      );
       _openPremiumPaywall();
       return;
     }
@@ -248,7 +260,14 @@ class _HistoryScreenState extends State<HistoryScreen> {
                   ),
                   const SizedBox(height: 14),
                   ElevatedButton.icon(
-                    onPressed: _openPremiumPaywall,
+                    onPressed: () {
+                      final provider = _providers[_selectedProviderIndex].title;
+                      _upsellTracker.trackPremiumCtaTapped(
+                        range: _selectedRange,
+                        provider: provider,
+                      );
+                      _openPremiumPaywall();
+                    },
                     icon: Icon(
                       _premiumStatus.isPremium
                           ? Icons.verified
