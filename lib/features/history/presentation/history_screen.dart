@@ -1,9 +1,13 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../../home/models/provider_summary.dart';
 import '../../premium/models/premium_status.dart';
 import '../../premium/presentation/premium_paywall_screen.dart';
 import '../../premium/services/premium_state_controller.dart';
+import '../analytics/history_upsell_event_storage.dart';
+import '../analytics/history_upsell_export_adapter.dart';
 import '../analytics/history_upsell_tracker.dart';
 import '../models/history_range.dart';
 import '../models/price_history_point.dart';
@@ -26,7 +30,10 @@ class HistoryScreen extends StatefulWidget {
 
 class _HistoryScreenState extends State<HistoryScreen> {
   final PremiumStateController _premiumStateController = PremiumStateController();
-  final HistoryUpsellTracker _upsellTracker = HistoryUpsellTracker();
+  final HistoryUpsellTracker _upsellTracker = HistoryUpsellTracker(
+    storage: SharedPrefsHistoryUpsellEventStorage(),
+    exportAdapter: const NoopHistoryUpsellExportAdapter(),
+  );
   late final List<ProviderSummary> _providers;
 
   PremiumStatus _premiumStatus = const PremiumStatus(
@@ -41,6 +48,11 @@ class _HistoryScreenState extends State<HistoryScreen> {
     super.initState();
     _providers = HistoryProviderUtils.ensureProviders(widget.summaries);
     _loadPremiumStatus();
+    unawaited(_initUpsellTracking());
+  }
+
+  Future<void> _initUpsellTracking() async {
+    await _upsellTracker.initialize();
     final firstProvider = _providers.first.title;
     _upsellTracker.trackScreenViewed(
       range: _selectedRange,

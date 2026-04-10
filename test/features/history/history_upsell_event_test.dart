@@ -18,4 +18,18 @@ void main() {
     expect(payload['provider'], 'DOJI');
     expect(payload['timestamp'], '2026-04-10T01:02:03.000Z');
   });
+
+  test('HistoryUpsellEvent fromMap restores event values', () {
+    final event = HistoryUpsellEvent.fromMap({
+      'type': 'premiumRangeTapped',
+      'range': 'ninetyDays',
+      'provider': 'Mi Hồng',
+      'timestamp': '2026-04-10T02:03:04.000Z',
+    });
+
+    expect(event.type, HistoryUpsellEventType.premiumRangeTapped);
+    expect(event.range, HistoryRange.ninetyDays);
+    expect(event.provider, 'Mi Hồng');
+    expect(event.timestamp.toIso8601String(), '2026-04-10T02:03:04.000Z');
+  });
 }

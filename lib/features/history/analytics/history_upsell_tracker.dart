@@ -1,7 +1,34 @@
+import 'dart:async';
+
 import '../models/history_range.dart';
 import 'history_upsell_event.dart';
+import 'history_upsell_event_storage.dart';
+import 'history_upsell_export_adapter.dart';
 
 class HistoryUpsellTracker {
+  HistoryUpsellTracker({
+    this.storage,
+    this.exportAdapter,
+  });
+
+  final HistoryUpsellEventStorage? storage;
+  final HistoryUpsellExportAdapter? exportAdapter;
+
+  final List<HistoryUpsellEvent> _events = [];
+
+  List<HistoryUpsellEvent> get events => List.unmodifiable(_events);
+
+  Future<void> initialize() async {
+    if (storage == null) {
+      return;
+    }
+
+    final loaded = await storage!.loadEvents();
+    _events
+      ..clear()
+      ..addAll(loaded);
+  }
+
   void trackScreenViewed({
     required HistoryRange range,
     required String provider,
@@ -44,12 +71,19 @@ class HistoryUpsellTracker {
     );
   }
 
-  // Scaffold-only in-memory log for now.
-  final List<HistoryUpsellEvent> _events = [];
+  Future<void> exportNow() async {
+    if (exportAdapter == null) {
+      return;
+    }
 
-  List<HistoryUpsellEvent> get events => List.unmodifiable(_events);
+    await exportAdapter!.exportEvents(events);
+  }
 
   void _push(HistoryUpsellEvent event) {
     _events.add(event);
+
+    if (storage != null) {
+      unawaited(storage!.saveEvents(events));
+    }
   }
 }
