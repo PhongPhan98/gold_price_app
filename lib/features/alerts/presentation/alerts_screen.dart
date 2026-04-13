@@ -49,6 +49,7 @@ class _AlertsScreenState extends State<AlertsScreen> {
   Future<void> _addAlert() async {
     final targetPrice = _targetPriceController.text.trim();
     if (targetPrice.isEmpty) {
+      _showToast('Vui lòng nhập giá mục tiêu');
       return;
     }
 
@@ -82,6 +83,8 @@ class _AlertsScreenState extends State<AlertsScreen> {
       _alerts = updatedAlerts;
       _targetPriceController.clear();
     });
+
+    _showToast('Đã tạo cảnh báo mới');
   }
 
   Future<void> _toggleAlert(PriceAlert alert) async {
@@ -108,6 +111,7 @@ class _AlertsScreenState extends State<AlertsScreen> {
     setState(() {
       _alerts = updatedAlerts;
     });
+    _showToast('Đã xóa cảnh báo');
   }
 
   void _openPremiumPaywall() {
@@ -115,6 +119,12 @@ class _AlertsScreenState extends State<AlertsScreen> {
       context,
       MaterialPageRoute(builder: (_) => const PremiumPaywallScreen()),
     ).then((_) => _loadScreenData());
+  }
+
+  void _showToast(String text) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(text)),
+    );
   }
 
   @override
@@ -164,7 +174,7 @@ class _AlertsScreenState extends State<AlertsScreen> {
                     'Thiết lập cảnh báo',
                     style: TextStyle(
                       color: Colors.white,
-                      fontSize: 19,
+                      fontSize: 18,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -211,21 +221,26 @@ class _AlertsScreenState extends State<AlertsScreen> {
                   TextField(
                     controller: _targetPriceController,
                     keyboardType: TextInputType.number,
+                    onChanged: (_) => setState(() {}),
                     decoration: const InputDecoration(
                       labelText: 'Giá mục tiêu',
                       hintText: 'Ví dụ: 98000000',
                     ),
                   ),
                   const SizedBox(height: 12),
-                  ElevatedButton.icon(
-                    onPressed: _addAlert,
-                    icon: const Icon(Icons.add_alert),
-                    label: Text(
-                      _alerts.isEmpty
-                          ? 'Tạo cảnh báo miễn phí'
-                          : _premiumStatus.isPremium
-                              ? 'Tạo thêm cảnh báo'
-                              : 'Tạo thêm cảnh báo (Premium)',
+                  Semantics(
+                    label: 'Tạo cảnh báo giá mới',
+                    button: true,
+                    child: ElevatedButton.icon(
+                      onPressed: _targetPriceController.text.trim().isEmpty ? null : _addAlert,
+                      icon: const Icon(Icons.add_alert),
+                      label: Text(
+                        _alerts.isEmpty
+                            ? 'Tạo cảnh báo miễn phí'
+                            : _premiumStatus.isPremium
+                                ? 'Tạo thêm cảnh báo'
+                                : 'Tạo thêm cảnh báo (Premium)',
+                      ),
                     ),
                   ),
                   const SizedBox(height: 10),
@@ -301,9 +316,12 @@ class _AlertsScreenState extends State<AlertsScreen> {
                     ),
                     Column(
                       children: [
-                        Switch(
-                          value: alert.isEnabled,
-                          onChanged: (_) => _toggleAlert(alert),
+                        Semantics(
+                          label: 'Bật hoặc tắt cảnh báo',
+                          child: Switch(
+                            value: alert.isEnabled,
+                            onChanged: (_) => _toggleAlert(alert),
+                          ),
                         ),
                         IconButton(
                           onPressed: () => _deleteAlert(alert),

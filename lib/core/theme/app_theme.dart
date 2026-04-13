@@ -24,18 +24,44 @@ class AppTheme {
       brightness: Brightness.dark,
       colorScheme: scheme,
       scaffoldBackgroundColor: background,
+      textTheme: const TextTheme(
+        titleLarge: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, height: 1.2),
+        titleMedium: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, height: 1.25),
+        bodyLarge: TextStyle(fontSize: 16, height: 1.4),
+        bodyMedium: TextStyle(fontSize: 14, height: 1.4),
+        bodySmall: TextStyle(fontSize: 12, height: 1.35),
+      ).apply(
+        bodyColor: Colors.white,
+        displayColor: Colors.white,
+      ),
       appBarTheme: const AppBarTheme(
         centerTitle: true,
         backgroundColor: background,
         foregroundColor: Colors.white,
         elevation: 0,
+        titleTextStyle: TextStyle(
+          fontSize: 21,
+          fontWeight: FontWeight.bold,
+          color: Colors.white,
+          height: 1.2,
+        ),
       ),
       cardTheme: CardThemeData(
         color: surface,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       ),
+      snackBarTheme: SnackBarThemeData(
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: surfaceMuted,
+        contentTextStyle: const TextStyle(color: Colors.white, fontSize: 14),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+      progressIndicatorTheme: const ProgressIndicatorThemeData(
+        color: accent,
+      ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
+          minimumSize: const Size(0, 44),
           backgroundColor: accent,
           foregroundColor: Colors.black,
           shape: RoundedRectangleBorder(
@@ -45,6 +71,7 @@ class AppTheme {
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
+          minimumSize: const Size(0, 44),
           side: BorderSide(color: accent.withValues(alpha: 0.5)),
           foregroundColor: Colors.white,
           shape: RoundedRectangleBorder(

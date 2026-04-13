@@ -85,11 +85,15 @@ class _CompareScreenState extends State<CompareScreen> {
                   bestSellValue: bestSell?.topSellPrice,
                 ),
                 const SizedBox(height: 12),
-                _AdvancedCompareSection(
-                  isPremium: _premiumStatus.isPremium,
-                  rankedByBuy: rankedByBuy,
-                  rankedBySell: rankedBySell,
-                  onUpgradeTap: _openPremiumPaywall,
+                AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 220),
+                  child: _AdvancedCompareSection(
+                    key: ValueKey(_premiumStatus.isPremium),
+                    isPremium: _premiumStatus.isPremium,
+                    rankedByBuy: rankedByBuy,
+                    rankedBySell: rankedBySell,
+                    onUpgradeTap: _openPremiumPaywall,
+                  ),
                 ),
                 const SizedBox(height: 12),
                 ...activeSummaries.map((summary) {
@@ -235,6 +239,7 @@ class _CompareHeroCard extends StatelessWidget {
 
 class _AdvancedCompareSection extends StatelessWidget {
   const _AdvancedCompareSection({
+    super.key,
     required this.isPremium,
     required this.rankedByBuy,
     required this.rankedBySell,

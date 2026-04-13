@@ -128,10 +128,14 @@ class _HomeScreenState extends State<HomeScreen> {
           style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
         ),
         actions: [
-          IconButton(
-            onPressed: _loadSummaries,
-            icon: const Icon(Icons.refresh),
-            tooltip: 'Làm mới dữ liệu',
+          Semantics(
+            label: 'Làm mới dữ liệu trang chủ',
+            button: true,
+            child: IconButton(
+              onPressed: _loadSummaries,
+              icon: const Icon(Icons.refresh),
+              tooltip: 'Làm mới dữ liệu',
+            ),
           ),
           PopupMenuButton<String>(
             icon: const Icon(Icons.more_vert),
@@ -217,28 +221,41 @@ class _HomeScreenState extends State<HomeScreen> {
                       ],
                     ),
                     const SizedBox(height: 12),
-                    ElevatedButton.icon(
-                      onPressed: _openCompareScreen,
-                      icon: const Icon(Icons.compare_arrows),
-                      label: const Text('So sánh nhanh'),
+                    Semantics(
+                      label: 'Mở màn hình so sánh nhanh',
+                      button: true,
+                      child: ElevatedButton.icon(
+                        onPressed: _openCompareScreen,
+                        icon: const Icon(Icons.compare_arrows),
+                        label: const Text('So sánh nhanh'),
+                      ),
                     ),
                   ],
                 ),
               ),
             ),
             const SizedBox(height: 12),
-            ...orderedItems.map((item) {
-              return Padding(
-                padding: const EdgeInsets.symmetric(vertical: 6),
-                child: _ProviderMenuCard(
-                  item: item,
-                  summary: summariesByTitle[item.title],
-                  isLoadingSummary: _isLoadingSummaries,
-                  isFavorite: _favoriteTitles.contains(item.title),
-                  onToggleFavorite: () => _toggleFavorite(item.title),
+            if (_isLoadingSummaries && _summaries.isEmpty)
+              ...List.generate(
+                3,
+                (_) => const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 6),
+                  child: _ProviderSkeletonCard(),
                 ),
-              );
-            }),
+              )
+            else
+              ...orderedItems.map((item) {
+                return Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 6),
+                  child: _ProviderMenuCard(
+                    item: item,
+                    summary: summariesByTitle[item.title],
+                    isLoadingSummary: _isLoadingSummaries,
+                    isFavorite: _favoriteTitles.contains(item.title),
+                    onToggleFavorite: () => _toggleFavorite(item.title),
+                  ),
+                );
+              }),
             const SizedBox(height: 6),
             const Center(
               child: Text(
@@ -347,17 +364,21 @@ class _ProviderMenuCard extends StatelessWidget {
                                 ),
                               ),
                             ),
-                            IconButton(
-                              onPressed: onToggleFavorite,
-                              icon: Icon(
-                                isFavorite
-                                    ? Icons.push_pin
-                                    : Icons.push_pin_outlined,
-                                color: isFavorite
-                                    ? AppTheme.accent
-                                    : Colors.white54,
+                            Semantics(
+                              label: isFavorite ? 'Bỏ ghim nguồn giá' : 'Ghim nguồn giá',
+                              button: true,
+                              child: IconButton(
+                                onPressed: onToggleFavorite,
+                                icon: Icon(
+                                  isFavorite
+                                      ? Icons.push_pin
+                                      : Icons.push_pin_outlined,
+                                  color: isFavorite
+                                      ? AppTheme.accent
+                                      : Colors.white54,
+                                ),
+                                tooltip: isFavorite ? 'Bỏ ghim' : 'Ghim nguồn này',
                               ),
-                              tooltip: isFavorite ? 'Bỏ ghim' : 'Ghim nguồn này',
                             ),
                           ],
                         ),
@@ -475,6 +496,70 @@ class _SummaryPreview extends StatelessWidget {
     );
   }
 }
+
+
+class _ProviderSkeletonCard extends StatelessWidget {
+  const _ProviderSkeletonCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Column(
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: Colors.white12,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        height: 14,
+                        width: 160,
+                        decoration: BoxDecoration(
+                          color: Colors.white12,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Container(
+                        height: 12,
+                        width: 220,
+                        decoration: BoxDecoration(
+                          color: Colors.white10,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            Container(
+              height: 56,
+              decoration: BoxDecoration(
+                color: Colors.white10,
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 
 class _ProviderMenuItem {
   const _ProviderMenuItem({

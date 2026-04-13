@@ -37,10 +37,14 @@ class ProviderPriceScreen extends StatelessWidget {
       appBar: AppBar(
         title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            tooltip: 'Làm mới',
-            onPressed: onRefresh,
+          Semantics(
+            label: 'Làm mới dữ liệu giá vàng',
+            button: true,
+            child: IconButton(
+              icon: const Icon(Icons.refresh),
+              tooltip: 'Làm mới',
+              onPressed: onRefresh,
+            ),
           ),
         ],
       ),
@@ -75,7 +79,12 @@ class ProviderPriceScreen extends StatelessWidget {
               SizedBox(
                 height: MediaQuery.sizeOf(context).height * 0.72,
                 child: isLoading
-                    ? const Center(child: CircularProgressIndicator())
+                    ? const Center(
+                        child: Semantics(
+                          label: 'Đang tải dữ liệu giá vàng',
+                          child: CircularProgressIndicator(),
+                        ),
+                      )
                     : entries.isEmpty
                         ? _EmptyState(
                             message: emptyMessage,
