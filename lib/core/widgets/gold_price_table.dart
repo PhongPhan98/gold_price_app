@@ -28,84 +28,86 @@ class GoldPriceTable extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final columnWidths = <int, TableColumnWidth>{
-      0: FlexColumnWidth(nameFlex.toDouble()),
-      1: FlexColumnWidth(buyFlex.toDouble()),
-      2: FlexColumnWidth(sellFlex.toDouble()),
-      3: FlexColumnWidth(timeFlex.toDouble()),
-    };
-
     return Column(
       children: [
-        Table(
-          border: TableBorder.all(color: Colors.white),
-          columnWidths: columnWidths,
-          children: [
-            TableRow(
-              decoration: BoxDecoration(color: Colors.yellow[800]),
-              children: [
-                _buildHeaderCell(nameHeader),
-                _buildHeaderCell(buyHeader),
-                _buildHeaderCell(sellHeader),
-                _buildHeaderCell(timeHeader),
-              ],
-            ),
-          ],
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.08),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.white12),
+          ),
+          child: Row(
+            children: [
+              _buildHeaderCell(nameHeader, flex: nameFlex),
+              _buildHeaderCell(buyHeader, flex: buyFlex),
+              _buildHeaderCell(sellHeader, flex: sellFlex),
+              _buildHeaderCell(timeHeader, flex: timeFlex),
+            ],
+          ),
         ),
+        const SizedBox(height: 8),
         Expanded(
-          child: SingleChildScrollView(
-            scrollDirection: Axis.vertical,
-            child: Table(
-              border: TableBorder.all(color: Colors.white),
-              columnWidths: columnWidths,
-              children: entries.map(_buildDataRow).toList(),
-            ),
+          child: ListView.separated(
+            itemCount: entries.length,
+            separatorBuilder: (_, __) => const SizedBox(height: 8),
+            itemBuilder: (context, index) {
+              final entry = entries[index];
+              return Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.05),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.white10),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildValueCell(entry.name, flex: nameFlex),
+                    _buildPriceCell(
+                      value: entry.buyPrice,
+                      change: entry.buyChange,
+                      changePercent: entry.buyChangePercent,
+                      flex: buyFlex,
+                    ),
+                    _buildPriceCell(
+                      value: entry.sellPrice,
+                      change: entry.sellChange,
+                      changePercent: entry.sellChangePercent,
+                      flex: sellFlex,
+                    ),
+                    _buildValueCell(entry.updatedAt, flex: timeFlex),
+                  ],
+                ),
+              );
+            },
           ),
         ),
       ],
     );
   }
 
-  Widget _buildHeaderCell(String text) {
-    return Padding(
-      padding: const EdgeInsets.all(8.0),
+  Widget _buildHeaderCell(String text, {required int flex}) {
+    return Expanded(
+      flex: flex,
       child: Text(
         text,
         style: const TextStyle(
-          fontSize: 16,
+          fontSize: 13,
           fontWeight: FontWeight.bold,
-          color: Colors.white,
+          color: Colors.white70,
         ),
         textAlign: TextAlign.center,
       ),
     );
   }
 
-  TableRow _buildDataRow(GoldPriceEntry entry) {
-    return TableRow(
-      children: [
-        _buildValueCell(entry.name),
-        _buildPriceCell(
-          value: entry.buyPrice,
-          change: entry.buyChange,
-          changePercent: entry.buyChangePercent,
-        ),
-        _buildPriceCell(
-          value: entry.sellPrice,
-          change: entry.sellChange,
-          changePercent: entry.sellChangePercent,
-        ),
-        _buildValueCell(entry.updatedAt),
-      ],
-    );
-  }
-
-  Widget _buildValueCell(String value) {
-    return Padding(
-      padding: const EdgeInsets.all(8.0),
+  Widget _buildValueCell(String value, {required int flex}) {
+    return Expanded(
+      flex: flex,
       child: Text(
         value,
-        style: const TextStyle(color: Colors.white),
+        style: const TextStyle(color: Colors.white, fontSize: 14),
         textAlign: TextAlign.center,
       ),
     );
@@ -115,9 +117,10 @@ class GoldPriceTable extends StatelessWidget {
     required String value,
     String? change,
     String? changePercent,
+    required int flex,
   }) {
     if (change == null && changePercent == null) {
-      return _buildValueCell(value);
+      return _buildValueCell(value, flex: flex);
     }
 
     final changeText = [
@@ -125,22 +128,33 @@ class GoldPriceTable extends StatelessWidget {
       if (changePercent != null) '($changePercent%)',
     ].join(' ');
 
-    return Padding(
-      padding: const EdgeInsets.all(8.0),
+    final changeColor = _getChangeColor(change);
+    final icon = _getChangeIcon(change);
+
+    return Expanded(
+      flex: flex,
       child: Column(
         children: [
           Text(
             value,
-            style: const TextStyle(color: Colors.white),
+            style: const TextStyle(color: Colors.white, fontSize: 14),
             textAlign: TextAlign.center,
           ),
           if (changeText.isNotEmpty)
-            Text(
-              changeText,
-              style: TextStyle(
-                color: _getChangeColor(change),
-              ),
-              textAlign: TextAlign.center,
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(icon, size: 14, color: changeColor),
+                const SizedBox(width: 4),
+                Flexible(
+                  child: Text(
+                    changeText,
+                    style: TextStyle(color: changeColor, fontSize: 12),
+                    textAlign: TextAlign.center,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
             ),
         ],
       ),
@@ -152,13 +166,28 @@ class GoldPriceTable extends StatelessWidget {
       return Colors.white;
     }
 
-    final normalized = change.toString().trim();
+    final normalized = change.trim();
     if (normalized.startsWith('-')) {
-      return Colors.red;
+      return Colors.redAccent;
     }
     if (normalized == '0' || normalized == '0.0' || normalized == '0.00') {
-      return Colors.white;
+      return Colors.white70;
     }
-    return Colors.green;
+    return Colors.greenAccent;
+  }
+
+  IconData _getChangeIcon(String? change) {
+    if (change == null) {
+      return Icons.remove;
+    }
+
+    final normalized = change.trim();
+    if (normalized.startsWith('-')) {
+      return Icons.arrow_downward_rounded;
+    }
+    if (normalized == '0' || normalized == '0.0' || normalized == '0.00') {
+      return Icons.remove;
+    }
+    return Icons.arrow_upward_rounded;
   }
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/theme/app_theme.dart';
 import '../../alerts/presentation/alerts_screen.dart';
 import '../../premium/presentation/premium_paywall_screen.dart';
 import '../../compare/presentation/compare_screen.dart';
@@ -20,9 +21,6 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  static const _backgroundColor = Color.fromARGB(255, 133, 30, 30);
-  static const _accentColor = Color.fromARGB(255, 202, 182, 1);
-
   final HomeSummaryService _summaryService = HomeSummaryService();
   final FavoriteProviderStorage _favoriteProviderStorage =
       FavoriteProviderStorage();
@@ -38,19 +36,19 @@ class _HomeScreenState extends State<HomeScreen> {
     _items = <_ProviderMenuItem>[
       _ProviderMenuItem(
         title: 'Bảo Tín Minh Châu',
-        subtitle: 'Giá vàng SJC, nhẫn tròn trơn và nhiều loại khác',
+        subtitle: 'Giá SJC, nhẫn tròn trơn và nhiều loại khác',
         icon: Icons.workspace_premium,
         pageBuilder: () => const BaoTinMinhChauGoldPriceHomePage(),
       ),
       _ProviderMenuItem(
         title: 'Mi Hồng',
-        subtitle: 'Theo dõi giá mua bán và mức biến động trong ngày',
+        subtitle: 'Theo dõi giá mua bán và biến động trong ngày',
         icon: Icons.show_chart,
         pageBuilder: () => const MiHongGoldPriceHomePage(),
       ),
       _ProviderMenuItem(
         title: 'Doji',
-        subtitle: 'Cập nhật bảng giá từ hệ thống vàng bạc đá quý Doji',
+        subtitle: 'Bảng giá vàng bạc đá quý Doji',
         icon: Icons.account_balance,
         pageBuilder: () => const DojiGoldPriceHomePage(),
       ),
@@ -124,200 +122,133 @@ class _HomeScreenState extends State<HomeScreen> {
       });
 
     return Scaffold(
-      resizeToAvoidBottomInset: false,
       appBar: AppBar(
-        title: Text(
+        title: const Text(
           'Giá Vàng VN',
-          style: TextStyle(
-            fontSize: 26,
-            fontWeight: FontWeight.bold,
-            fontFamily: 'Roboto',
-            color: Colors.yellowAccent.withValues(alpha: 0.8),
-          ),
+          style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
         ),
-        centerTitle: true,
-        backgroundColor: _backgroundColor,
         actions: [
-          IconButton(
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const AlertsScreen()),
-              );
-            },
-            icon: const Icon(Icons.notifications_active_outlined),
-            color: const Color.fromARGB(255, 202, 182, 1),
-            tooltip: 'Cảnh báo giá',
-          ),
-          IconButton(
-            onPressed: _openCompareScreen,
-            icon: const Icon(Icons.compare_arrows),
-            color: const Color.fromARGB(255, 202, 182, 1),
-            tooltip: 'So sánh nhanh',
-          ),
-          IconButton(
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const PremiumPaywallScreen()),
-              );
-            },
-            icon: const Icon(Icons.workspace_premium_outlined),
-            color: const Color.fromARGB(255, 202, 182, 1),
-            tooltip: 'Nâng cấp Premium',
-          ),
-          IconButton(
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => HistoryScreen(summaries: _summaries)),
-              );
-            },
-            icon: const Icon(Icons.insights_outlined),
-            color: const Color.fromARGB(255, 202, 182, 1),
-            tooltip: 'Lịch sử giá',
-          ),
           IconButton(
             onPressed: _loadSummaries,
             icon: const Icon(Icons.refresh),
-            color: const Color.fromARGB(255, 202, 182, 1),
+            tooltip: 'Làm mới dữ liệu',
+          ),
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.more_vert),
+            itemBuilder: (context) => const [
+              PopupMenuItem(value: 'alerts', child: Text('Cảnh báo giá')),
+              PopupMenuItem(value: 'compare', child: Text('So sánh nhanh')),
+              PopupMenuItem(value: 'history', child: Text('Lịch sử giá')),
+              PopupMenuItem(value: 'premium', child: Text('Nâng cấp Premium')),
+            ],
+            onSelected: (value) {
+              switch (value) {
+                case 'alerts':
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const AlertsScreen()),
+                  );
+                  break;
+                case 'compare':
+                  _openCompareScreen();
+                  break;
+                case 'history':
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => HistoryScreen(summaries: _summaries),
+                    ),
+                  );
+                  break;
+                case 'premium':
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const PremiumPaywallScreen(),
+                    ),
+                  );
+                  break;
+              }
+            },
           ),
         ],
       ),
-      body: SafeArea(
-        bottom: true,
-        child: Stack(
+      body: RefreshIndicator(
+        onRefresh: _loadSummaries,
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 28),
           children: [
-            RefreshIndicator(
-              onRefresh: _loadSummaries,
-              child: ListView(
-                padding: const EdgeInsets.fromLTRB(24, 24, 24, 80),
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.08),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(
-                        color: _accentColor.withValues(alpha: 0.5),
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Theo dõi giá vàng mỗi ngày',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
                       ),
                     ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                    const SizedBox(height: 8),
+                    const Text(
+                      'Chạm vào một nguồn để xem giá chi tiết và thời gian cập nhật mới nhất.',
+                      style: TextStyle(color: Colors.white70, height: 1.4),
+                    ),
+                    const SizedBox(height: 12),
+                    Wrap(
+                      spacing: 10,
+                      runSpacing: 10,
                       children: [
-                        const Text(
-                          'Theo dõi giá vàng nhanh gọn',
-                          style: TextStyle(
-                            fontSize: 24,
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                          ),
+                        _TopMetricCard(
+                          label: 'Nguồn',
+                          value: '${orderedItems.length}',
                         ),
-                        const SizedBox(height: 10),
-                        const Text(
-                          'Chọn thương hiệu bên dưới để xem giá mua vào, bán ra và thời gian cập nhật mới nhất. Bạn có thể ghim nguồn ưu tiên và so sánh nhanh ngay từ trang chủ.',
-                          style: TextStyle(
-                            fontSize: 16,
-                            color: Colors.white70,
-                            height: 1.4,
-                          ),
+                        _TopMetricCard(
+                          label: 'Đã ghim',
+                          value: '${_favoriteTitles.length}',
                         ),
-                        const SizedBox(height: 14),
-                        Wrap(
-                          spacing: 10,
-                          runSpacing: 10,
-                          children: [
-                            _TopMetricCard(
-                              label: 'Nguồn theo dõi',
-                              value: '${orderedItems.length}',
-                            ),
-                            _TopMetricCard(
-                              label: 'Đã ghim',
-                              value: '${_favoriteTitles.length}',
-                            ),
-                            _TopMetricCard(
-                              label: 'Trạng thái',
-                              value: _isLoadingSummaries
-                                  ? 'Đang tải'
-                                  : 'Sẵn sàng',
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 14),
-                        Wrap(
-                          spacing: 10,
-                          runSpacing: 10,
-                          children: [
-                            ElevatedButton.icon(
-                              onPressed: _openCompareScreen,
-                              icon: const Icon(Icons.compare_arrows),
-                              label: const Text('Mở màn hình so sánh nhanh'),
-                            ),
-                            ElevatedButton.icon(
-                              onPressed: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(builder: (_) => const AlertsScreen()),
-                                );
-                              },
-                              icon: const Icon(Icons.add_alert),
-                              label: const Text('Thiết lập cảnh báo'),
-                            ),
-                            ElevatedButton.icon(
-                              onPressed: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(builder: (_) => HistoryScreen(summaries: _summaries)),
-                                );
-                              },
-                              icon: const Icon(Icons.insights_outlined),
-                              label: const Text('Xem lịch sử giá'),
-                            ),
-                          ],
+                        _TopMetricCard(
+                          label: 'Trạng thái',
+                          value: _isLoadingSummaries ? 'Đang tải' : 'Sẵn sàng',
                         ),
                       ],
                     ),
-                  ),
-                  const SizedBox(height: 24),
-                  ...orderedItems.map((item) {
-                    return Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 10.0),
-                      child: _ProviderMenuCard(
-                        item: item,
-                        summary: summariesByTitle[item.title],
-                        isLoadingSummary: _isLoadingSummaries,
-                        isFavorite: _favoriteTitles.contains(item.title),
-                        onToggleFavorite: () => _toggleFavorite(item.title),
-                      ),
-                    );
-                  }),
-                ],
+                    const SizedBox(height: 12),
+                    ElevatedButton.icon(
+                      onPressed: _openCompareScreen,
+                      icon: const Icon(Icons.compare_arrows),
+                      label: const Text('So sánh nhanh'),
+                    ),
+                  ],
+                ),
               ),
             ),
-            Positioned(
-              bottom: 16.0,
-              right: 16.0,
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12.0,
-                  vertical: 6.0,
+            const SizedBox(height: 12),
+            ...orderedItems.map((item) {
+              return Padding(
+                padding: const EdgeInsets.symmetric(vertical: 6),
+                child: _ProviderMenuCard(
+                  item: item,
+                  summary: summariesByTitle[item.title],
+                  isLoadingSummary: _isLoadingSummaries,
+                  isFavorite: _favoriteTitles.contains(item.title),
+                  onToggleFavorite: () => _toggleFavorite(item.title),
                 ),
-                child: const Text(
-                  'v1.0.0',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: _accentColor,
-                    fontFamily: 'Source Sans Pro',
-                    fontWeight: FontWeight.w500,
-                    letterSpacing: 0.5,
-                  ),
-                ),
+              );
+            }),
+            const SizedBox(height: 6),
+            const Center(
+              child: Text(
+                'v1.0.0',
+                style: TextStyle(color: Colors.white54, fontSize: 12),
               ),
             ),
           ],
         ),
       ),
-      backgroundColor: _backgroundColor,
     );
   }
 }
@@ -333,15 +264,16 @@ class _TopMetricCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
-        color: Colors.black.withValues(alpha: 0.18),
+        color: context.appSurfaceMuted,
         borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.white12),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             label,
-            style: const TextStyle(color: Colors.white60, fontSize: 12),
+            style: const TextStyle(color: Colors.white70, fontSize: 12),
           ),
           const SizedBox(height: 4),
           Text(
@@ -374,48 +306,31 @@ class _ProviderMenuCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
+    return Card(
       child: InkWell(
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(16),
         onTap: () {
           Navigator.push(
             context,
             MaterialPageRoute(builder: (_) => item.pageBuilder()),
           );
         },
-        child: Ink(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
-          decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.08),
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: const Color.fromARGB(255, 202, 182, 1)),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.18),
-                blurRadius: 12,
-                offset: const Offset(0, 6),
-              ),
-            ],
-          ),
+        child: Padding(
+          padding: const EdgeInsets.all(14),
           child: Column(
             children: [
               Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Container(
-                    padding: const EdgeInsets.all(12),
+                    padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
-                      color: const Color.fromARGB(255, 202, 182, 1)
-                          .withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(14),
+                      color: AppTheme.accent.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(12),
                     ),
-                    child: Icon(
-                      item.icon,
-                      color: const Color.fromARGB(255, 202, 182, 1),
-                      size: 28,
-                    ),
+                    child: Icon(item.icon, color: AppTheme.accent, size: 24),
                   ),
-                  const SizedBox(width: 16),
+                  const SizedBox(width: 12),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -426,9 +341,8 @@ class _ProviderMenuCard extends StatelessWidget {
                               child: Text(
                                 item.title,
                                 style: const TextStyle(
-                                  fontSize: 22,
-                                  color: Color.fromARGB(255, 202, 182, 1),
-                                  fontFamily: 'Source Sans Pro',
+                                  fontSize: 19,
+                                  color: Colors.white,
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
@@ -440,33 +354,27 @@ class _ProviderMenuCard extends StatelessWidget {
                                     ? Icons.push_pin
                                     : Icons.push_pin_outlined,
                                 color: isFavorite
-                                    ? const Color.fromARGB(255, 202, 182, 1)
+                                    ? AppTheme.accent
                                     : Colors.white54,
                               ),
                               tooltip: isFavorite ? 'Bỏ ghim' : 'Ghim nguồn này',
                             ),
                           ],
                         ),
-                        const SizedBox(height: 6),
+                        const SizedBox(height: 4),
                         Text(
                           item.subtitle,
                           style: const TextStyle(
                             color: Colors.white70,
                             fontSize: 14,
-                            height: 1.35,
                           ),
                         ),
                       ],
                     ),
                   ),
-                  const SizedBox(width: 12),
-                  const Icon(
-                    Icons.chevron_right,
-                    color: Color.fromARGB(255, 202, 182, 1),
-                  ),
                 ],
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 12),
               _SummaryPreview(
                 summary: summary,
                 isLoadingSummary: isLoadingSummary,
@@ -494,7 +402,7 @@ class _SummaryPreview extends StatelessWidget {
       return const Align(
         alignment: Alignment.centerLeft,
         child: Text(
-          'Đang tải dữ liệu xem nhanh...',
+          'Đang tải dữ liệu...',
           style: TextStyle(color: Colors.white60),
         ),
       );
@@ -506,10 +414,10 @@ class _SummaryPreview extends StatelessWidget {
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.black.withValues(alpha: 0.16),
-        borderRadius: BorderRadius.circular(14),
+        color: Colors.black.withValues(alpha: 0.2),
+        borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: summary!.hasError
               ? Colors.orangeAccent.withValues(alpha: 0.5)
@@ -521,10 +429,10 @@ class _SummaryPreview extends StatelessWidget {
         children: [
           if (summary!.topBuyPrice != null || summary!.topSellPrice != null)
             Padding(
-              padding: const EdgeInsets.only(bottom: 12),
+              padding: const EdgeInsets.only(bottom: 10),
               child: Wrap(
-                spacing: 10,
-                runSpacing: 10,
+                spacing: 8,
+                runSpacing: 8,
                 children: [
                   if (summary!.topBuyPrice != null)
                     SummaryBadge(
@@ -539,7 +447,7 @@ class _SummaryPreview extends StatelessWidget {
                 ],
               ),
             ),
-          ...summary!.previewLines.map(
+          ...summary!.previewLines.take(2).map(
             (line) => Padding(
               padding: const EdgeInsets.only(bottom: 6),
               child: Text(
@@ -553,7 +461,7 @@ class _SummaryPreview extends StatelessWidget {
           ),
           if (summary!.lastUpdated != null)
             Padding(
-              padding: const EdgeInsets.only(top: 6),
+              padding: const EdgeInsets.only(top: 4),
               child: Text(
                 'Cập nhật: ${summary!.lastUpdated}',
                 style: const TextStyle(

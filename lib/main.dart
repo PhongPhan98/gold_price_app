@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'core/theme/app_theme.dart';
 import 'features/home/presentation/home_screen.dart';
 
 void main() {
@@ -14,7 +15,7 @@ class GoldPriceApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Giá vàng Việt Nam',
-      theme: ThemeData(primarySwatch: Colors.amber),
+      theme: AppTheme.light,
       home: const HomeScreen(),
     );
   }
