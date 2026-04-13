@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 
-import '../../premium/services/premium_state_controller.dart';
+import '../../../core/theme/app_theme.dart';
 import '../../premium/models/premium_status.dart';
 import '../../premium/presentation/premium_paywall_screen.dart';
+import '../../premium/services/premium_state_controller.dart';
 import '../data/price_alert_storage.dart';
 import '../models/price_alert.dart';
 
@@ -130,60 +131,40 @@ class _AlertsScreenState extends State<AlertsScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Cảnh báo giá'),
-        backgroundColor: Colors.yellow[800],
       ),
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Colors.black87, Colors.black54],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-          ),
-        ),
-        child: ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            Container(
+      body: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          Card(
+            child: Padding(
               padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.08),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(
-                  color: _premiumStatus.isPremium
-                      ? Colors.greenAccent.withValues(alpha: 0.4)
-                      : Colors.white12,
-                ),
-              ),
               child: Wrap(
-                spacing: 12,
-                runSpacing: 12,
+                spacing: 10,
+                runSpacing: 10,
                 children: [
-                  _MetricChip(label: 'Free alert', value: '$freeAlertsUsed / 1'),
-                  _MetricChip(label: 'Premium alerts', value: '$premiumAlertsCount'),
+                  _MetricChip(label: 'Free', value: '$freeAlertsUsed / 1'),
+                  _MetricChip(label: 'Premium', value: '$premiumAlertsCount'),
                   _MetricChip(
-                    label: 'Gói hiện tại',
+                    label: 'Gói',
                     value: _premiumStatus.isPremium ? 'Premium' : 'Free',
                     highlight: _premiumStatus.isPremium,
                   ),
                 ],
               ),
             ),
-            const SizedBox(height: 16),
-            Container(
+          ),
+          const SizedBox(height: 12),
+          Card(
+            child: Padding(
               padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.08),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: Colors.white12),
-              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Text(
-                    'Thiết lập cảnh báo giá',
+                    'Thiết lập cảnh báo',
                     style: TextStyle(
                       color: Colors.white,
-                      fontSize: 20,
+                      fontSize: 19,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -235,7 +216,7 @@ class _AlertsScreenState extends State<AlertsScreen> {
                       hintText: 'Ví dụ: 98000000',
                     ),
                   ),
-                  const SizedBox(height: 14),
+                  const SizedBox(height: 12),
                   ElevatedButton.icon(
                     onPressed: _addAlert,
                     icon: const Icon(Icons.add_alert),
@@ -250,53 +231,40 @@ class _AlertsScreenState extends State<AlertsScreen> {
                   const SizedBox(height: 10),
                   Text(
                     _alerts.isEmpty
-                        ? 'Bạn đang ở free tier: tạo cảnh báo đầu tiên miễn phí.'
+                        ? 'Bạn có thể tạo 1 cảnh báo miễn phí.'
                         : _premiumStatus.isPremium
-                            ? 'Bạn đang dùng premium, có thể tạo thêm nhiều cảnh báo.'
-                            : 'Bạn đã dùng hết quota miễn phí. Tạo thêm cảnh báo cần Premium.',
-                    style: const TextStyle(color: Colors.white60, height: 1.4),
+                            ? 'Bạn có thể tạo nhiều cảnh báo hơn.'
+                            : 'Bạn đã dùng hết giới hạn miễn phí. Nâng cấp để thêm cảnh báo.',
+                    style: const TextStyle(color: Colors.white70, height: 1.35),
                   ),
-                  const SizedBox(height: 10),
-                  OutlinedButton.icon(
-                    onPressed: _openPremiumPaywall,
-                    icon: const Icon(Icons.workspace_premium_outlined),
-                    label: Text(
-                      _premiumStatus.isPremium
-                          ? 'Quản lý quyền lợi Premium'
-                          : 'Xem quyền lợi Premium',
+                  if (!_premiumStatus.isPremium) ...[
+                    const SizedBox(height: 10),
+                    OutlinedButton.icon(
+                      onPressed: _openPremiumPaywall,
+                      icon: const Icon(Icons.workspace_premium_outlined),
+                      label: const Text('Xem quyền lợi Premium'),
                     ),
-                  ),
+                  ],
                 ],
               ),
             ),
-            const SizedBox(height: 16),
+          ),
+          const SizedBox(height: 12),
+          const Text(
+            'Danh sách cảnh báo',
+            style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 10),
+          if (_alerts.isEmpty)
             const Text(
-              'Danh sách cảnh báo',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
+              'Chưa có cảnh báo nào. Tạo cảnh báo đầu tiên để theo dõi giá thuận tiện hơn.',
+              style: TextStyle(color: Colors.white70, height: 1.4),
             ),
-            const SizedBox(height: 12),
-            if (_alerts.isEmpty)
-              const Text(
-                'Chưa có cảnh báo nào. Hãy tạo cảnh báo đầu tiên để tăng khả năng quay lại app mỗi ngày.',
-                style: TextStyle(color: Colors.white70, height: 1.4),
-              ),
-            ..._alerts.map((alert) {
-              return Container(
-                margin: const EdgeInsets.only(bottom: 12),
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.08),
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(
-                    color: alert.isPremium
-                        ? Colors.orangeAccent.withValues(alpha: 0.45)
-                        : Colors.white12,
-                  ),
-                ),
+          ..._alerts.map((alert) {
+            return Card(
+              margin: const EdgeInsets.only(bottom: 10),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                 child: Row(
                   children: [
                     Expanded(
@@ -310,7 +278,7 @@ class _AlertsScreenState extends State<AlertsScreen> {
                               fontWeight: FontWeight.bold,
                             ),
                           ),
-                          const SizedBox(height: 6),
+                          const SizedBox(height: 4),
                           Text(
                             alert.direction == PriceAlertDirection.above
                                 ? 'Báo khi giá vượt mức này'
@@ -321,9 +289,9 @@ class _AlertsScreenState extends State<AlertsScreen> {
                             const Padding(
                               padding: EdgeInsets.only(top: 6),
                               child: Text(
-                                'Premium feature',
+                                'Cảnh báo Premium',
                                 style: TextStyle(
-                                  color: Colors.orangeAccent,
+                                  color: AppTheme.accent,
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
@@ -347,10 +315,10 @@ class _AlertsScreenState extends State<AlertsScreen> {
                     ),
                   ],
                 ),
-              );
-            }),
-          ],
-        ),
+              ),
+            );
+          }),
+        ],
       ),
     );
   }
@@ -375,18 +343,13 @@ class _MetricChip extends StatelessWidget {
         color: Colors.black.withValues(alpha: 0.2),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: highlight
-              ? Colors.greenAccent.withValues(alpha: 0.45)
-              : Colors.white12,
+          color: highlight ? Colors.greenAccent.withValues(alpha: 0.45) : Colors.white12,
         ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            label,
-            style: const TextStyle(color: Colors.white60, fontSize: 12),
-          ),
+          Text(label, style: const TextStyle(color: Colors.white60, fontSize: 12)),
           const SizedBox(height: 4),
           Text(
             value,

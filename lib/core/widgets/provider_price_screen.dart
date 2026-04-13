@@ -35,77 +35,61 @@ class ProviderPriceScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          title,
-          style: const TextStyle(fontWeight: FontWeight.bold),
-        ),
-        backgroundColor: Colors.yellow[800],
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.pop(context),
-        ),
+        title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
+            tooltip: 'Làm mới',
             onPressed: onRefresh,
           ),
         ],
       ),
       body: SafeArea(
         bottom: true,
-        child: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: [Colors.black87, Colors.black54],
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-            ),
-          ),
-          child: RefreshIndicator(
-            onRefresh: () async => onRefresh(),
-            child: ListView(
-              physics: const AlwaysScrollableScrollPhysics(),
-              padding: const EdgeInsets.all(16.0),
-              children: [
-                if (lastUpdatedLabel != null) ...[
-                  _InfoBanner(
-                    icon: Icons.schedule,
-                    text: lastUpdatedLabel!,
-                    color: Colors.white70,
-                  ),
-                  const SizedBox(height: 12),
-                ],
-                if (errorMessage != null) ...[
-                  _InfoBanner(
-                    icon: Icons.error_outline,
-                    text: errorMessage!,
-                    color: Colors.orangeAccent,
-                    trailing: TextButton(
-                      onPressed: onRefresh,
-                      child: const Text('Thử lại'),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                ],
-                SizedBox(
-                  height: MediaQuery.sizeOf(context).height * 0.72,
-                  child: isLoading
-                      ? const Center(child: CircularProgressIndicator())
-                      : entries.isEmpty
-                          ? _EmptyState(
-                              message: emptyMessage,
-                              onRefresh: onRefresh,
-                            )
-                          : GoldPriceTable(
-                              entries: entries,
-                              nameFlex: nameFlex,
-                              buyFlex: buyFlex,
-                              sellFlex: sellFlex,
-                              timeFlex: timeFlex,
-                            ),
+        child: RefreshIndicator(
+          onRefresh: () async => onRefresh(),
+          child: ListView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.all(16.0),
+            children: [
+              if (lastUpdatedLabel != null) ...[
+                _InfoBanner(
+                  icon: Icons.schedule,
+                  text: lastUpdatedLabel!,
+                  color: Colors.white70,
                 ),
+                const SizedBox(height: 12),
               ],
-            ),
+              if (errorMessage != null) ...[
+                _InfoBanner(
+                  icon: Icons.error_outline,
+                  text: errorMessage!,
+                  color: Colors.orangeAccent,
+                  trailing: TextButton(
+                    onPressed: onRefresh,
+                    child: const Text('Thử lại'),
+                  ),
+                ),
+                const SizedBox(height: 12),
+              ],
+              SizedBox(
+                height: MediaQuery.sizeOf(context).height * 0.72,
+                child: isLoading
+                    ? const Center(child: CircularProgressIndicator())
+                    : entries.isEmpty
+                        ? _EmptyState(
+                            message: emptyMessage,
+                            onRefresh: onRefresh,
+                          )
+                        : GoldPriceTable(
+                            entries: entries,
+                            nameFlex: nameFlex,
+                            buyFlex: buyFlex,
+                            sellFlex: sellFlex,
+                            timeFlex: timeFlex,
+                          ),
+              ),
+            ],
           ),
         ),
       ),
@@ -139,12 +123,7 @@ class _InfoBanner extends StatelessWidget {
         children: [
           Icon(icon, color: color),
           const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              text,
-              style: const TextStyle(color: Colors.white),
-            ),
-          ),
+          Expanded(child: Text(text, style: const TextStyle(color: Colors.white))),
           if (trailing != null) trailing!,
         ],
       ),
@@ -164,15 +143,11 @@ class _EmptyState extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(
-            Icons.currency_exchange,
-            size: 54,
-            color: Colors.white54,
-          ),
+          const Icon(Icons.currency_exchange, size: 54, color: Colors.white54),
           const SizedBox(height: 16),
           Text(
             message,
-            style: const TextStyle(fontSize: 22, color: Colors.white),
+            style: const TextStyle(fontSize: 18, color: Colors.white),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 18),

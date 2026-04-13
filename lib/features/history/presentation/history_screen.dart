@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../../../core/theme/app_theme.dart';
 import '../../home/models/provider_summary.dart';
 import '../../premium/models/premium_status.dart';
 import '../../premium/presentation/premium_paywall_screen.dart';
@@ -136,67 +137,39 @@ class _HistoryScreenState extends State<HistoryScreen> with WidgetsBindingObserv
     final valueBullets = HistoryPremiumCopy.buildValueBullets(
       isPremium: _premiumStatus.isPremium,
     );
-    final retentionPrompt = HistoryPremiumCopy.buildRetentionPrompt(
-      isPremium: _premiumStatus.isPremium,
-    );
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Lịch sử giá'),
-        backgroundColor: Colors.yellow[800],
       ),
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Colors.black87, Colors.black54],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-          ),
-        ),
-        child: ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            Container(
+      body: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          Card(
+            child: Padding(
               padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.08),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(
-                  color: _premiumStatus.isPremium
-                      ? Colors.greenAccent.withValues(alpha: 0.4)
-                      : Colors.orangeAccent.withValues(alpha: 0.35),
-                ),
-              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Text(
-                    'Lịch sử và xu hướng giá',
+                    'Lịch sử và xu hướng',
                     style: TextStyle(
                       color: Colors.white,
-                      fontSize: 22,
+                      fontSize: 20,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 8),
                   const Text(
-                    'Chọn nhà cung cấp để xem trend riêng theo nguồn.',
-                    style: TextStyle(color: Colors.white70, height: 1.4),
+                    'Chọn nhà cung cấp và khoảng thời gian để xem xu hướng giá.',
+                    style: TextStyle(color: Colors.white70, height: 1.35),
                   ),
                   const SizedBox(height: 12),
                   DropdownButtonFormField<int>(
                     initialValue: _selectedProviderIndex,
                     dropdownColor: Colors.black87,
                     key: ValueKey(_selectedProviderIndex),
-                    decoration: InputDecoration(
-                      labelText: 'Nhà cung cấp',
-                      labelStyle: const TextStyle(color: Colors.white70),
-                      filled: true,
-                      fillColor: Colors.white.withValues(alpha: 0.05),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
+                    decoration: const InputDecoration(labelText: 'Nhà cung cấp'),
                     style: const TextStyle(color: Colors.white),
                     items: _providers.asMap().entries.map((entry) {
                       return DropdownMenuItem<int>(
@@ -218,15 +191,7 @@ class _HistoryScreenState extends State<HistoryScreen> with WidgetsBindingObserv
                     initialValue: _selectedRange,
                     dropdownColor: Colors.black87,
                     key: ValueKey(_selectedRange),
-                    decoration: InputDecoration(
-                      labelText: 'Khoảng thời gian',
-                      labelStyle: const TextStyle(color: Colors.white70),
-                      filled: true,
-                      fillColor: Colors.white.withValues(alpha: 0.05),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
+                    decoration: const InputDecoration(labelText: 'Khoảng thời gian'),
                     style: const TextStyle(color: Colors.white),
                     items: HistoryRange.values.map((range) {
                       final premiumTag = range.premiumRequired ? ' (Premium)' : '';
@@ -237,34 +202,24 @@ class _HistoryScreenState extends State<HistoryScreen> with WidgetsBindingObserv
                     }).toList(),
                     onChanged: _onRangeChanged,
                   ),
-                  const SizedBox(height: 12),
-                  Text(
-                    'Nguồn đang xem: $providerName • Dải: ${_selectedRange.label}',
-                    style: const TextStyle(
-                      color: Colors.white70,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
                   const SizedBox(height: 10),
                   Text(
-                    rangeValueMessage,
-                    style: const TextStyle(color: Colors.white70, height: 1.4),
+                    'Nguồn: $providerName • Dải: ${_selectedRange.label}',
+                    style: const TextStyle(color: Colors.white70, fontWeight: FontWeight.bold),
                   ),
-                  const SizedBox(height: 12),
-                  ...valueBullets.map((bullet) {
+                  const SizedBox(height: 8),
+                  Text(rangeValueMessage, style: const TextStyle(color: Colors.white70, height: 1.35)),
+                  const SizedBox(height: 10),
+                  ...valueBullets.take(2).map((bullet) {
                     return Padding(
                       padding: const EdgeInsets.only(bottom: 6),
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Icon(
-                            _premiumStatus.isPremium
-                                ? Icons.check_circle_outline
-                                : Icons.star_outline,
+                            _premiumStatus.isPremium ? Icons.check_circle_outline : Icons.star_outline,
                             size: 18,
-                            color: _premiumStatus.isPremium
-                                ? Colors.greenAccent
-                                : Colors.orangeAccent,
+                            color: _premiumStatus.isPremium ? Colors.greenAccent : AppTheme.accent,
                           ),
                           const SizedBox(width: 8),
                           Expanded(
@@ -277,49 +232,29 @@ class _HistoryScreenState extends State<HistoryScreen> with WidgetsBindingObserv
                       ),
                     );
                   }),
-                  const SizedBox(height: 10),
-                  Text(
-                    retentionPrompt,
-                    style: TextStyle(
-                      color: _premiumStatus.isPremium
-                          ? Colors.greenAccent
-                          : Colors.orangeAccent,
-                      fontStyle: FontStyle.italic,
-                      height: 1.4,
+                  if (!_premiumStatus.isPremium) ...[
+                    const SizedBox(height: 10),
+                    OutlinedButton.icon(
+                      onPressed: () {
+                        final provider = _providers[_selectedProviderIndex].title;
+                        _upsellTracker.trackPremiumCtaTapped(
+                          range: _selectedRange,
+                          provider: provider,
+                        );
+                        _openPremiumPaywall();
+                      },
+                      icon: const Icon(Icons.workspace_premium_outlined),
+                      label: const Text('Mở khóa dải 30/90 ngày'),
                     ),
-                  ),
-                  const SizedBox(height: 14),
-                  ElevatedButton.icon(
-                    onPressed: () {
-                      final provider = _providers[_selectedProviderIndex].title;
-                      _upsellTracker.trackPremiumCtaTapped(
-                        range: _selectedRange,
-                        provider: provider,
-                      );
-                      _openPremiumPaywall();
-                    },
-                    icon: Icon(
-                      _premiumStatus.isPremium
-                          ? Icons.verified
-                          : Icons.workspace_premium,
-                    ),
-                    label: Text(
-                      _premiumStatus.isPremium
-                          ? 'Bạn đang dùng History Premium'
-                          : 'Mở khóa lịch sử nâng cao',
-                    ),
-                  ),
+                  ],
                 ],
               ),
             ),
-            const SizedBox(height: 16),
-            Container(
+          ),
+          const SizedBox(height: 12),
+          Card(
+            child: Padding(
               padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.08),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: Colors.white12),
-              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -327,37 +262,28 @@ class _HistoryScreenState extends State<HistoryScreen> with WidgetsBindingObserv
                     'Insight xu hướng',
                     style: TextStyle(
                       color: Colors.white,
-                      fontSize: 20,
+                      fontSize: 18,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 8),
                   Text(
                     insight,
                     style: TextStyle(
-                      color: _premiumStatus.isPremium
-                          ? Colors.greenAccent
-                          : Colors.orangeAccent,
+                      color: _premiumStatus.isPremium ? Colors.greenAccent : Colors.orangeAccent,
                       height: 1.4,
                     ),
                   ),
-                  if (!_premiumStatus.isPremium) ...[
-                    const SizedBox(height: 10),
-                    const Text(
-                      'Premium sẽ mở khóa insight mạnh hơn, dải 30/90 ngày và khả năng đọc xu hướng sâu hơn.',
-                      style: TextStyle(color: Colors.white60, height: 1.4),
-                    ),
-                  ],
                 ],
               ),
             ),
-            const SizedBox(height: 16),
-            _HistoryPreviewCard(
-              points: sampleHistory,
-              isPremium: _premiumStatus.isPremium,
-            ),
-          ],
-        ),
+          ),
+          const SizedBox(height: 12),
+          _HistoryPreviewCard(
+            points: sampleHistory,
+            isPremium: _premiumStatus.isPremium,
+          ),
+        ],
       ),
     );
   }
@@ -376,75 +302,68 @@ class _HistoryPreviewCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final visiblePoints = isPremium ? points : points.take(7).toList();
 
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white12),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            isPremium ? 'Dữ liệu xu hướng mở rộng' : 'Bản xem trước xu hướng (7 ngày)',
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              isPremium ? 'Dữ liệu mở rộng' : 'Bản xem trước (7 ngày)',
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
             ),
-          ),
-          const SizedBox(height: 12),
-          ...visiblePoints.map((point) {
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: Row(
-                children: [
-                  SizedBox(
-                    width: 58,
-                    child: Text(
-                      point.label,
-                      style: const TextStyle(color: Colors.white60),
+            const SizedBox(height: 12),
+            ...visiblePoints.map((point) {
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Row(
+                  children: [
+                    SizedBox(
+                      width: 58,
+                      child: Text(point.label, style: const TextStyle(color: Colors.white60)),
                     ),
-                  ),
-                  Expanded(
-                    child: Container(
-                      height: 10,
-                      decoration: BoxDecoration(
-                        color: const Color.fromARGB(255, 202, 182, 1)
-                            .withValues(alpha: 0.2),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      alignment: Alignment.centerLeft,
-                      child: FractionallySizedBox(
-                        widthFactor: ((point.value % 100000000) / 100000000)
-                            .clamp(0.15, 1.0),
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: isPremium ? Colors.greenAccent : Colors.orangeAccent,
-                            borderRadius: BorderRadius.circular(10),
+                    Expanded(
+                      child: Container(
+                        height: 10,
+                        decoration: BoxDecoration(
+                          color: AppTheme.accent.withValues(alpha: 0.2),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        alignment: Alignment.centerLeft,
+                        child: FractionallySizedBox(
+                          widthFactor: ((point.value % 100000000) / 100000000).clamp(0.15, 1.0),
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: isPremium ? Colors.greenAccent : Colors.orangeAccent,
+                              borderRadius: BorderRadius.circular(10),
+                            ),
                           ),
                         ),
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 12),
-                  Text(
-                    point.value.toStringAsFixed(0),
-                    style: const TextStyle(color: Colors.white70),
-                  ),
-                ],
+                    const SizedBox(width: 12),
+                    Text(
+                      point.value.toStringAsFixed(0),
+                      style: const TextStyle(color: Colors.white70),
+                    ),
+                  ],
+                ),
+              );
+            }),
+            if (!isPremium)
+              const Padding(
+                padding: EdgeInsets.only(top: 8),
+                child: Text(
+                  'Mở khóa Premium để xem thêm mốc 30/90 ngày.',
+                  style: TextStyle(color: Colors.orangeAccent),
+                ),
               ),
-            );
-          }),
-          if (!isPremium) ...[
-            const SizedBox(height: 12),
-            const Text(
-              'Premium sẽ mở khóa thêm mốc thời gian 30/90 ngày, xu hướng dài hơn và insight tốt hơn.',
-              style: TextStyle(color: Colors.orangeAccent, height: 1.4),
-            ),
           ],
-        ],
+        ),
       ),
     );
   }
