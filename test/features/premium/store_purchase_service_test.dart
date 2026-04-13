@@ -57,6 +57,24 @@ void main() {
       service = StorePurchaseService(gateway: gateway, storage: storage);
     });
 
+    test('fetchOffers returns mapped store offers', () async {
+      gateway.products = const [
+        StoreProduct(
+          id: 'gold_price_pro_monthly',
+          title: 'Monthly Plan',
+          description: 'Monthly access',
+          price: r'$1.99',
+          raw: Object(),
+        ),
+      ];
+
+      final offers = await service.fetchOffers();
+
+      expect(offers.length, 1);
+      expect(offers.first.plan, PremiumPlan.proMonthly);
+      expect(offers.first.priceLabel, r'$1.99');
+    });
+
     test('purchase returns error when store is unavailable', () async {
       gateway.available = false;
 
@@ -67,7 +85,15 @@ void main() {
     });
 
     test('purchase returns success and persists premium status', () async {
-      gateway.products = const [StoreProduct(id: 'gold_price_pro_monthly', raw: Object())];
+      gateway.products = const [
+        StoreProduct(
+          id: 'gold_price_pro_monthly',
+          title: 'Monthly',
+          description: 'desc',
+          price: r'$1.99',
+          raw: Object(),
+        ),
+      ];
       gateway.buyUpdates = const [
         StorePurchaseUpdate(
           productId: 'gold_price_pro_monthly',
@@ -85,7 +111,15 @@ void main() {
     });
 
     test('purchase returns cancelled when user cancels', () async {
-      gateway.products = const [StoreProduct(id: 'gold_price_pro_monthly', raw: Object())];
+      gateway.products = const [
+        StoreProduct(
+          id: 'gold_price_pro_monthly',
+          title: 'Monthly',
+          description: 'desc',
+          price: r'$1.99',
+          raw: Object(),
+        ),
+      ];
       gateway.buyUpdates = const [
         StorePurchaseUpdate(
           productId: 'gold_price_pro_monthly',

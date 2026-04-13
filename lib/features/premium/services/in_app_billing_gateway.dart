@@ -1,14 +1,18 @@
-import 'dart:async';
-
 import 'package:in_app_purchase/in_app_purchase.dart';
 
 class StoreProduct {
   const StoreProduct({
     required this.id,
+    required this.title,
+    required this.description,
+    required this.price,
     required this.raw,
   });
 
   final String id;
+  final String title;
+  final String description;
+  final String price;
   final Object raw;
 }
 
@@ -58,7 +62,15 @@ class RealInAppBillingGateway implements InAppBillingGateway {
   Future<List<StoreProduct>> queryProducts(Set<String> productIds) async {
     final response = await _inAppPurchase.queryProductDetails(productIds);
     return response.productDetails
-        .map((item) => StoreProduct(id: item.id, raw: item))
+        .map(
+          (item) => StoreProduct(
+            id: item.id,
+            title: item.title,
+            description: item.description,
+            price: item.price,
+            raw: item,
+          ),
+        )
         .toList();
   }
 

@@ -2,6 +2,7 @@ import 'dart:async';
 
 import '../config/billing_config.dart';
 import '../data/premium_status_storage.dart';
+import '../models/premium_offer.dart';
 import '../models/premium_status.dart';
 import '../models/purchase_result.dart';
 import 'in_app_billing_gateway.dart';
@@ -17,24 +18,49 @@ class StorePurchaseService implements PurchaseService {
   InAppBillingGateway? _gateway;
   final PremiumStatusStorage _storage;
 
-  InAppBillingGateway get _resolvedGateway =>
-      _gateway ??= RealInAppBillingGateway();
+  InAppBillingGateway get _resolvedGateway => _gateway ??= RealInAppBillingGateway();
+
+  @override
+  Future<List<PremiumOffer>> fetchOffers() async {
+    final available = await _resolvedGateway.isAvailable();
+    if (!available) {
+      return const [];
+    }
+
+    final products = await _resolvedGateway.queryProducts({
+      BillingConfig.monthlyProductId,
+      BillingConfig.yearlyProductId,
+    });
+
+    return products
+        .map(
+          (item) => PremiumOffer(
+            plan: _planForProductId(item.id),
+            productId: item.id,
+            title: item.title,
+            description: item.description,
+            priceLabel: item.price,
+          ),
+        )
+        .where((offer) => offer.plan != PremiumPlan.free)
+        .toList();
+  }
 
   @override
   Future<PurchaseResult> purchase(PremiumPlan plan) async {
     if (plan == PremiumPlan.free) {
-      return PurchaseResult(
+      return const PurchaseResult(
         status: PurchaseResultStatus.error,
-        premiumStatus: const PremiumStatus(plan: PremiumPlan.free, isActive: false),
+        premiumStatus: PremiumStatus(plan: PremiumPlan.free, isActive: false),
         message: 'Không thể mua gói free.',
       );
     }
 
     final available = await _resolvedGateway.isAvailable();
     if (!available) {
-      return PurchaseResult(
+      return const PurchaseResult(
         status: PurchaseResultStatus.error,
-        premiumStatus: const PremiumStatus(plan: PremiumPlan.free, isActive: false),
+        premiumStatus: PremiumStatus(plan: PremiumPlan.free, isActive: false),
         message: 'Store billing hiện không khả dụng trên thiết bị này.',
       );
     }
@@ -164,13 +190,18 @@ class StorePurchaseService implements PurchaseService {
     return BillingConfig.productIdForPlan(plan);
   }
 
-  PremiumStatus _statusForProductId(String productId) {
+  PremiumPlan _planForProductId(String productId) {
     if (productId == BillingConfig.monthlyProductId) {
-      return const PremiumStatus(plan: PremiumPlan.proMonthly, isActive: true);
+      return PremiumPlan.proMonthly;
     }
     if (productId == BillingConfig.yearlyProductId) {
-      return const PremiumStatus(plan: PremiumPlan.proYearly, isActive: true);
+      return PremiumPlan.proYearly;
     }
-    return const PremiumStatus(plan: PremiumPlan.free, isActive: false);
+    return PremiumPlan.free;
+  }
+
+  PremiumStatus _statusForProductId(String productId) {
+    final plan = _planForProductId(productId);
+    return PremiumStatus(plan: plan, isActive: plan != PremiumPlan.free);
   }
 }

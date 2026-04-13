@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 
+import '../models/premium_offer.dart';
 import '../models/premium_status.dart';
 import '../models/purchase_result.dart';
 import '../services/premium_state_controller.dart';
-import '../services/purchase_service_factory.dart';
 import '../services/purchase_service.dart';
+import '../services/purchase_service_factory.dart';
 
 class PremiumPaywallScreen extends StatefulWidget {
   const PremiumPaywallScreen({super.key});
@@ -21,6 +22,7 @@ class _PremiumPaywallScreenState extends State<PremiumPaywallScreen> {
     plan: PremiumPlan.free,
     isActive: false,
   );
+  List<PremiumOffer> _offers = const [];
   bool _isLoading = false;
   String? _statusMessage;
 
@@ -28,6 +30,26 @@ class _PremiumPaywallScreenState extends State<PremiumPaywallScreen> {
   void initState() {
     super.initState();
     _refreshEntitlementStatus();
+    _loadOffers();
+  }
+
+  Future<void> _loadOffers() async {
+    final offers = await _purchaseService.fetchOffers();
+    if (!mounted) {
+      return;
+    }
+    setState(() {
+      _offers = offers;
+    });
+  }
+
+  PremiumOffer? _offerForPlan(PremiumPlan plan) {
+    for (final offer in _offers) {
+      if (offer.plan == plan) {
+        return offer;
+      }
+    }
+    return null;
   }
 
   Future<void> _refreshEntitlementStatus() async {
@@ -104,6 +126,9 @@ class _PremiumPaywallScreenState extends State<PremiumPaywallScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final monthlyOffer = _offerForPlan(PremiumPlan.proMonthly);
+    final yearlyOffer = _offerForPlan(PremiumPlan.proYearly);
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Nâng cấp Premium'),
@@ -190,9 +215,10 @@ class _PremiumPaywallScreenState extends State<PremiumPaywallScreen> {
             ),
             const SizedBox(height: 16),
             _PlanCard(
-              title: 'Pro Monthly',
-              subtitle: 'Phù hợp để test conversion và thói quen trả phí hàng tháng',
-              price: '49.000đ / tháng',
+              title: monthlyOffer?.title ?? 'Pro Monthly',
+              subtitle: monthlyOffer?.description ??
+                  'Phù hợp để test conversion và thói quen trả phí hàng tháng',
+              price: monthlyOffer?.priceLabel ?? '49.000đ / tháng',
               productId: _purchaseService.productIdForPlan(PremiumPlan.proMonthly),
               isLoading: _isLoading,
               isActive: _currentStatus.plan == PremiumPlan.proMonthly &&
@@ -201,45 +227,14 @@ class _PremiumPaywallScreenState extends State<PremiumPaywallScreen> {
             ),
             const SizedBox(height: 12),
             _PlanCard(
-              title: 'Pro Yearly',
-              subtitle: 'Tỷ lệ giữ chân và doanh thu dài hạn tốt hơn',
-              price: '399.000đ / năm',
+              title: yearlyOffer?.title ?? 'Pro Yearly',
+              subtitle: yearlyOffer?.description ?? 'Tỷ lệ giữ chân và doanh thu dài hạn tốt hơn',
+              price: yearlyOffer?.priceLabel ?? '399.000đ / năm',
               productId: _purchaseService.productIdForPlan(PremiumPlan.proYearly),
               isLoading: _isLoading,
               isActive: _currentStatus.plan == PremiumPlan.proYearly &&
                   _currentStatus.isPremium,
               onTap: () => _activatePlan(PremiumPlan.proYearly),
-            ),
-            const SizedBox(height: 18),
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.08),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: Colors.white12),
-              ),
-              child: const Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Payment integration preparation',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  SizedBox(height: 10),
-                  Text('• Đã tách abstraction cho purchase flow', style: TextStyle(color: Colors.white70)),
-                  Text('• Có thể thay MockPurchaseService bằng billing thật sau này', style: TextStyle(color: Colors.white70)),
-                  Text('• Restore purchase path đã có skeleton', style: TextStyle(color: Colors.white70)),
-                  Text('• Có loading/state message để chuẩn bị cho flow billing thật', style: TextStyle(color: Colors.white70)),
-                  Text('• Product ids đã được cấu hình để chuẩn bị nối billing thật', style: TextStyle(color: Colors.white70)),
-                  Text('• Purchase result states đã sẵn sàng cho success/cancel/pending/error', style: TextStyle(color: Colors.white70)),
-                  Text('• Entitlement service đã có để làm nguồn sự thật tập trung', style: TextStyle(color: Colors.white70)),
-                  Text('• PurchaseServiceFactory đã sẵn sàng để chuyển mock → store billing', style: TextStyle(color: Colors.white70)),
-                ],
-              ),
             ),
           ],
         ),
