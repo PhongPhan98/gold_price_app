@@ -103,11 +103,16 @@ class GoldPriceTable extends StatelessWidget {
   }
 
   Widget _buildValueCell(String value, {required int flex}) {
+    final displayValue = _displayPriceValue(value);
     return Expanded(
       flex: flex,
       child: Text(
-        value,
-        style: const TextStyle(color: Colors.white, fontSize: 14),
+        displayValue,
+        style: TextStyle(
+          color: displayValue == 'Liên hệ' ? Colors.orangeAccent : Colors.white,
+          fontSize: 14,
+          fontStyle: displayValue == 'Liên hệ' ? FontStyle.italic : FontStyle.normal,
+        ),
         textAlign: TextAlign.center,
       ),
     );
@@ -136,11 +141,15 @@ class GoldPriceTable extends StatelessWidget {
       child: Column(
         children: [
           Text(
-            value,
-            style: const TextStyle(color: Colors.white, fontSize: 14),
+            _displayPriceValue(value),
+            style: TextStyle(
+              color: _displayPriceValue(value) == 'Liên hệ' ? Colors.orangeAccent : Colors.white,
+              fontSize: 14,
+              fontStyle: _displayPriceValue(value) == 'Liên hệ' ? FontStyle.italic : FontStyle.normal,
+            ),
             textAlign: TextAlign.center,
           ),
-          if (changeText.isNotEmpty)
+          if (changeText.isNotEmpty && _displayPriceValue(value) != 'Liên hệ')
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -159,6 +168,15 @@ class GoldPriceTable extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  String _displayPriceValue(String raw) {
+    final normalized = raw.trim();
+    if (normalized.isEmpty || normalized == '-' || normalized == '0' || normalized == '0.0' || normalized == '0.00') {
+      return 'Liên hệ';
+    }
+
+    return raw;
   }
 
   Color _getChangeColor(String? change) {
