@@ -94,21 +94,26 @@ class BaoTinManhHaiService {
     final items = (jsonData['data'] as Map<String, dynamic>?)?['goldRates'];
     final rows = (items as Map<String, dynamic>?)?['items'] as List<dynamic>? ?? [];
 
-    return rows.map((item) {
-      final row = item as Map<String, dynamic>;
-      final trendValue = row['trend_value']?.toString();
-      final trend = row['trend']?.toString().toLowerCase();
-      final normalizedChange = _normalizeTrendValue(trendValue, trend);
+    return rows
+        .map((item) {
+          final row = item as Map<String, dynamic>;
+          final trendValue = row['trend_value']?.toString();
+          final trend = row['trend']?.toString().toLowerCase();
+          final normalizedChange = _normalizeTrendValue(trendValue, trend);
+          final buyPrice = _normalizePrice(row['buy_price']);
+          final sellPrice = _normalizePrice(row['sell_price']);
 
-      return GoldPriceEntry(
-        name: row['name']?.toString() ?? 'N/A',
-        buyPrice: _normalizePrice(row['buy_price']?.toString() ?? '-'),
-        sellPrice: _normalizePrice(row['sell_price']?.toString() ?? '-'),
-        updatedAt: row['last_updated']?.toString() ?? 'N/A',
-        buyChange: normalizedChange,
-        sellChange: normalizedChange,
-      );
-    }).toList();
+          return GoldPriceEntry(
+            name: row['name']?.toString() ?? 'N/A',
+            buyPrice: buyPrice,
+            sellPrice: sellPrice,
+            updatedAt: row['last_updated']?.toString() ?? 'N/A',
+            buyChange: normalizedChange,
+            sellChange: normalizedChange,
+          );
+        })
+        .where((entry) => entry.buyPrice != '-' || entry.sellPrice != '-')
+        .toList();
   }
 
   Future<List<GoldPriceEntry>> _fetchFromHtml() async {
@@ -198,9 +203,42 @@ class BaoTinManhHaiService {
     return (updatedAt == null || updatedAt.isEmpty) ? 'N/A' : updatedAt;
   }
 
-  String _normalizePrice(String raw) {
-    final cleaned = raw.replaceAll('\u00A0', '').trim();
-    return cleaned.isEmpty ? '-' : cleaned;
+  String _normalizePrice(Object? raw) {
+    if (raw == null) {
+      return '-';
+    }
+
+    final cleaned = raw.toString().replaceAll('\u00A0', '').trim();
+    if (cleaned.isEmpty) {
+      return '-';
+    }
+
+    final digitsOnly = cleaned.replaceAll(RegExp(r'[^0-9]'), '');
+    if (digitsOnly.isEmpty) {
+      return cleaned;
+    }
+
+    final parsed = int.tryParse(digitsOnly);
+    if (parsed == null || parsed <= 1) {
+      return '-';
+    }
+
+    return _formatThousands(parsed);
+  }
+
+  String _formatThousands(int value) {
+    final raw = value.toString();
+    final buffer = StringBuffer();
+
+    for (var i = 0; i < raw.length; i++) {
+      final reverseIndex = raw.length - i;
+      buffer.write(raw[i]);
+      if (reverseIndex > 1 && reverseIndex % 3 == 1) {
+        buffer.write('.');
+      }
+    }
+
+    return buffer.toString();
   }
 
   String? _normalizeTrendValue(String? trendValue, String? trend) {
