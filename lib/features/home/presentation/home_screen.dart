@@ -9,6 +9,7 @@ import '../../gold_prices/presentation/doji_gold_price_page.dart';
 import '../../gold_prices/presentation/baotinmanhhai_gold_price_page.dart';
 import '../../gold_prices/presentation/mihong_gold_price_page.dart';
 import '../../history/presentation/history_screen.dart';
+import '../../portfolio/presentation/portfolio_screen.dart';
 import '../data/favorite_provider_storage.dart';
 import '../data/home_summary_service.dart';
 import '../models/provider_summary.dart';
@@ -150,6 +151,7 @@ class _HomeScreenState extends State<HomeScreen> {
               PopupMenuItem(value: 'alerts', child: Text('Cảnh báo giá')),
               PopupMenuItem(value: 'compare', child: Text('So sánh nhanh')),
               PopupMenuItem(value: 'history', child: Text('Lịch sử giá')),
+              PopupMenuItem(value: 'portfolio', child: Text('Portfolio vàng')),
               PopupMenuItem(value: 'premium', child: Text('Nâng cấp Premium')),
             ],
             onSelected: (value) {
@@ -168,6 +170,14 @@ class _HomeScreenState extends State<HomeScreen> {
                     context,
                     MaterialPageRoute(
                       builder: (_) => HistoryScreen(summaries: _summaries),
+                    ),
+                  );
+                  break;
+                case 'portfolio':
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => PortfolioScreen(summaries: _summaries),
                     ),
                   );
                   break;
