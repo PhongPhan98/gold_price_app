@@ -14,12 +14,16 @@ class SummaryBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isContact = value.trim().toLowerCase() == 'liên hệ';
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       decoration: BoxDecoration(
         color: Colors.black.withValues(alpha: 0.2),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withValues(alpha: 0.4)),
+        border: Border.all(
+          color: (isContact ? Colors.orangeAccent : color).withValues(alpha: 0.4),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -35,8 +39,9 @@ class SummaryBadge extends StatelessWidget {
           Text(
             value,
             style: TextStyle(
-              color: color,
+              color: isContact ? Colors.orangeAccent : color,
               fontWeight: FontWeight.bold,
+              fontStyle: isContact ? FontStyle.italic : FontStyle.normal,
             ),
           ),
         ],
