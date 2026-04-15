@@ -1,24 +1,29 @@
 import '../../gold_prices/data/services/baotinminhchau_service.dart';
 import '../../gold_prices/data/services/doji_service.dart';
+import '../../gold_prices/data/services/baotinmanhhai_service.dart';
 import '../../gold_prices/data/services/mihong_service.dart';
 import '../models/provider_summary.dart';
 
 class HomeSummaryService {
   HomeSummaryService({
     BaoTinMinhChauService? baotinMinhChauService,
+    BaoTinManhHaiService? baotinManhHaiService,
     MiHongService? miHongService,
     DojiService? dojiService,
   })  : _baotinMinhChauService = baotinMinhChauService ?? BaoTinMinhChauService(),
+        _baotinManhHaiService = baotinManhHaiService ?? BaoTinManhHaiService(),
         _miHongService = miHongService ?? MiHongService(),
         _dojiService = dojiService ?? DojiService();
 
   final BaoTinMinhChauService _baotinMinhChauService;
+  final BaoTinManhHaiService _baotinManhHaiService;
   final MiHongService _miHongService;
   final DojiService _dojiService;
 
   Future<List<ProviderSummary>> fetchSummaries() async {
     final results = await Future.wait([
       _buildBaoTinMinhChauSummary(),
+      _buildBaoTinManhHaiSummary(),
       _buildMiHongSummary(),
       _buildDojiSummary(),
     ]);
@@ -54,6 +59,36 @@ class HomeSummaryService {
       );
     }
   }
+
+  Future<ProviderSummary> _buildBaoTinManhHaiSummary() async {
+    try {
+      final prices = await _baotinManhHaiService.fetchPrices();
+      final preview = prices.take(2).map((item) {
+        return '${item.name}: ${item.buyPrice} / ${item.sellPrice}';
+      }).toList();
+      final first = prices.isNotEmpty ? prices.first : null;
+
+      return ProviderSummary(
+        title: 'Bảo Tín Mạnh Hải',
+        subtitle: 'Cập nhật bảng giá vàng trực tiếp từ BTMH',
+        previewLines: preview.isEmpty ? ['Chưa có dữ liệu hiển thị'] : preview,
+        lastUpdated: first?.updatedAt,
+        topBuyPrice: first?.buyPrice,
+        topSellPrice: first?.sellPrice,
+      );
+    } catch (_) {
+      return const ProviderSummary(
+        title: 'Bảo Tín Mạnh Hải',
+        subtitle: 'Cập nhật bảng giá vàng trực tiếp từ BTMH',
+        previewLines: ['Không tải được dữ liệu xem nhanh'],
+        lastUpdated: null,
+        topBuyPrice: null,
+        topSellPrice: null,
+        hasError: true,
+      );
+    }
+  }
+
 
   Future<ProviderSummary> _buildMiHongSummary() async {
     try {

@@ -6,6 +6,7 @@ import '../../premium/presentation/premium_paywall_screen.dart';
 import '../../compare/presentation/compare_screen.dart';
 import '../../gold_prices/presentation/baotinminhchau_gold_price_page.dart';
 import '../../gold_prices/presentation/doji_gold_price_page.dart';
+import '../../gold_prices/presentation/baotinmanhhai_gold_price_page.dart';
 import '../../gold_prices/presentation/mihong_gold_price_page.dart';
 import '../../history/presentation/history_screen.dart';
 import '../data/favorite_provider_storage.dart';
@@ -39,6 +40,12 @@ class _HomeScreenState extends State<HomeScreen> {
         subtitle: 'Giá SJC, nhẫn tròn trơn và nhiều loại khác',
         icon: Icons.workspace_premium,
         pageBuilder: () => const BaoTinMinhChauGoldPriceHomePage(),
+      ),
+      _ProviderMenuItem(
+        title: 'Bảo Tín Mạnh Hải',
+        subtitle: 'Cập nhật giá vàng trực tiếp từ BTMH',
+        icon: Icons.diamond,
+        pageBuilder: () => const BaoTinManhHaiGoldPriceHomePage(),
       ),
       _ProviderMenuItem(
         title: 'Mi Hồng',
