@@ -5,6 +5,8 @@ class PortfolioHolding {
     required this.provider,
     required this.quantityChi,
     required this.avgBuyPrice,
+    this.targetProfitPercent,
+    this.targetLossPercent,
   });
 
   final String id;
@@ -12,6 +14,8 @@ class PortfolioHolding {
   final String provider;
   final double quantityChi;
   final double avgBuyPrice;
+  final double? targetProfitPercent;
+  final double? targetLossPercent;
 
   PortfolioHolding copyWith({
     String? id,
@@ -19,6 +23,10 @@ class PortfolioHolding {
     String? provider,
     double? quantityChi,
     double? avgBuyPrice,
+    double? targetProfitPercent,
+    double? targetLossPercent,
+    bool clearTargetProfitPercent = false,
+    bool clearTargetLossPercent = false,
   }) {
     return PortfolioHolding(
       id: id ?? this.id,
@@ -26,6 +34,12 @@ class PortfolioHolding {
       provider: provider ?? this.provider,
       quantityChi: quantityChi ?? this.quantityChi,
       avgBuyPrice: avgBuyPrice ?? this.avgBuyPrice,
+      targetProfitPercent: clearTargetProfitPercent
+          ? null
+          : (targetProfitPercent ?? this.targetProfitPercent),
+      targetLossPercent: clearTargetLossPercent
+          ? null
+          : (targetLossPercent ?? this.targetLossPercent),
     );
   }
 
@@ -36,6 +50,8 @@ class PortfolioHolding {
       'provider': provider,
       'quantityChi': quantityChi,
       'avgBuyPrice': avgBuyPrice,
+      'targetProfitPercent': targetProfitPercent,
+      'targetLossPercent': targetLossPercent,
     };
   }
 
@@ -46,6 +62,8 @@ class PortfolioHolding {
       provider: json['provider'] as String,
       quantityChi: (json['quantityChi'] as num?)?.toDouble() ?? 0,
       avgBuyPrice: (json['avgBuyPrice'] as num?)?.toDouble() ?? 0,
+      targetProfitPercent: (json['targetProfitPercent'] as num?)?.toDouble(),
+      targetLossPercent: (json['targetLossPercent'] as num?)?.toDouble(),
     );
   }
 }

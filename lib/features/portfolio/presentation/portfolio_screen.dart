@@ -28,9 +28,12 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _quantityController = TextEditingController();
   final TextEditingController _avgBuyController = TextEditingController();
+  final TextEditingController _targetProfitController = TextEditingController();
+  final TextEditingController _targetLossController = TextEditingController();
 
   List<PortfolioHolding> _holdings = [];
   List<PortfolioSnapshot> _snapshots = [];
+  Map<String, String> _targetAlertMessages = {};
   String _selectedProvider = 'Mi Hồng';
 
   @override
@@ -54,6 +57,7 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
     });
 
     await _syncTodaySnapshot(holdings);
+    _evaluateTargetAlerts(holdings);
   }
 
   Future<void> _loadSnapshots() async {
@@ -79,6 +83,7 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
     });
 
     await _syncTodaySnapshot(updated);
+    _evaluateTargetAlerts(updated);
   }
 
   ({double totalCost, double totalCurrent}) _calculateTotals(List<PortfolioHolding> holdings) {
@@ -135,13 +140,78 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
     });
   }
 
+  void _evaluateTargetAlerts(List<PortfolioHolding> holdings) {
+    final nextAlerts = <String, String>{};
+
+    for (final item in holdings) {
+      final currentSell = _resolveCurrentSellPrice(item.provider);
+      if (item.avgBuyPrice <= 0 || currentSell <= 0) {
+        continue;
+      }
+
+      final pnlPercent = ((currentSell - item.avgBuyPrice) / item.avgBuyPrice) * 100;
+
+      if (item.targetProfitPercent != null && pnlPercent >= item.targetProfitPercent!) {
+        nextAlerts[item.id] =
+            '🎯 ${item.name}: đã đạt mục tiêu lợi nhuận ${item.targetProfitPercent!.toStringAsFixed(1)}%';
+      } else if (item.targetLossPercent != null && pnlPercent <= -item.targetLossPercent!) {
+        nextAlerts[item.id] =
+            '⚠️ ${item.name}: đã chạm ngưỡng lỗ ${item.targetLossPercent!.toStringAsFixed(1)}%';
+      }
+    }
+
+    final newlyTriggered = nextAlerts.entries
+        .where((entry) => !_targetAlertMessages.containsKey(entry.key))
+        .map((entry) => entry.value)
+        .toList();
+
+    if (mounted) {
+      setState(() {
+        _targetAlertMessages = nextAlerts;
+      });
+    } else {
+      _targetAlertMessages = nextAlerts;
+    }
+
+    for (final message in newlyTriggered) {
+      _toast(message);
+    }
+  }
+
+  String _targetSummary(PortfolioHolding item) {
+    final chunks = <String>[];
+    if (item.targetProfitPercent != null) {
+      chunks.add('TP +${item.targetProfitPercent!.toStringAsFixed(1)}%');
+    }
+    if (item.targetLossPercent != null) {
+      chunks.add('SL -${item.targetLossPercent!.toStringAsFixed(1)}%');
+    }
+
+    if (chunks.isEmpty) {
+      return 'Chưa đặt target';
+    }
+
+    return chunks.join(' • ');
+  }
+
   Future<void> _addHolding() async {
     final name = _nameController.text.trim();
     final quantity = double.tryParse(_quantityController.text.trim());
     final avgBuy = double.tryParse(_avgBuyController.text.trim());
+    final targetProfit = _targetProfitController.text.trim().isEmpty
+        ? null
+        : double.tryParse(_targetProfitController.text.trim());
+    final targetLoss = _targetLossController.text.trim().isEmpty
+        ? null
+        : double.tryParse(_targetLossController.text.trim());
 
     if (name.isEmpty || quantity == null || avgBuy == null || quantity <= 0 || avgBuy <= 0) {
       _toast('Vui lòng nhập đầy đủ và đúng định dạng');
+      return;
+    }
+
+    if ((targetProfit != null && targetProfit <= 0) || (targetLoss != null && targetLoss <= 0)) {
+      _toast('Target % phải lớn hơn 0');
       return;
     }
 
@@ -156,6 +226,8 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
       provider: effectiveProvider,
       quantityChi: quantity,
       avgBuyPrice: avgBuy,
+      targetProfitPercent: targetProfit,
+      targetLossPercent: targetLoss,
     );
 
     await _persistAndRefresh([..._holdings, next]);
@@ -168,6 +240,8 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
       _nameController.clear();
       _quantityController.clear();
       _avgBuyController.clear();
+      _targetProfitController.clear();
+      _targetLossController.clear();
     });
 
     _toast('Đã thêm tài sản');
@@ -177,6 +251,12 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
     final nameController = TextEditingController(text: item.name);
     final quantityController = TextEditingController(text: item.quantityChi.toString());
     final avgBuyController = TextEditingController(text: item.avgBuyPrice.toStringAsFixed(0));
+    final targetProfitController = TextEditingController(
+      text: item.targetProfitPercent?.toStringAsFixed(1) ?? '',
+    );
+    final targetLossController = TextEditingController(
+      text: item.targetLossPercent?.toStringAsFixed(1) ?? '',
+    );
     final providers = _providerNames;
     final providerOptions = providers.isEmpty ? [item.provider] : providers;
 
@@ -229,6 +309,18 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
                       keyboardType: const TextInputType.numberWithOptions(decimal: true),
                       decoration: const InputDecoration(labelText: 'Giá mua trung bình / chỉ (VND)'),
                     ),
+                    const SizedBox(height: 10),
+                    TextField(
+                      controller: targetProfitController,
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      decoration: const InputDecoration(labelText: 'Target lời % (tuỳ chọn)'),
+                    ),
+                    const SizedBox(height: 10),
+                    TextField(
+                      controller: targetLossController,
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      decoration: const InputDecoration(labelText: 'Target lỗ % (tuỳ chọn)'),
+                    ),
                   ],
                 ),
               ),
@@ -255,9 +347,21 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
     final updatedName = nameController.text.trim();
     final updatedQuantity = double.tryParse(quantityController.text.trim());
     final updatedAvgBuy = double.tryParse(avgBuyController.text.trim());
+    final updatedTargetProfit = targetProfitController.text.trim().isEmpty
+        ? null
+        : double.tryParse(targetProfitController.text.trim());
+    final updatedTargetLoss = targetLossController.text.trim().isEmpty
+        ? null
+        : double.tryParse(targetLossController.text.trim());
 
     if (updatedName.isEmpty || updatedQuantity == null || updatedAvgBuy == null || updatedQuantity <= 0 || updatedAvgBuy <= 0) {
       _toast('Dữ liệu chưa hợp lệ. Không thể cập nhật.');
+      return;
+    }
+
+    if ((updatedTargetProfit != null && updatedTargetProfit <= 0) ||
+        (updatedTargetLoss != null && updatedTargetLoss <= 0)) {
+      _toast('Target % phải lớn hơn 0');
       return;
     }
 
@@ -269,6 +373,10 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
                   provider: selectedProvider,
                   quantityChi: updatedQuantity,
                   avgBuyPrice: updatedAvgBuy,
+                  targetProfitPercent: updatedTargetProfit,
+                  targetLossPercent: updatedTargetLoss,
+                  clearTargetProfitPercent: updatedTargetProfit == null,
+                  clearTargetLossPercent: updatedTargetLoss == null,
                 )
               : e,
         )
@@ -399,6 +507,8 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
     _nameController.dispose();
     _quantityController.dispose();
     _avgBuyController.dispose();
+    _targetProfitController.dispose();
+    _targetLossController.dispose();
     super.dispose();
   }
 
@@ -577,6 +687,18 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
                     keyboardType: const TextInputType.numberWithOptions(decimal: true),
                     decoration: const InputDecoration(labelText: 'Giá mua trung bình / chỉ (VND)'),
                   ),
+                  const SizedBox(height: 10),
+                  TextField(
+                    controller: _targetProfitController,
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    decoration: const InputDecoration(labelText: 'Target lời % (tuỳ chọn)'),
+                  ),
+                  const SizedBox(height: 10),
+                  TextField(
+                    controller: _targetLossController,
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    decoration: const InputDecoration(labelText: 'Target lỗ % (tuỳ chọn)'),
+                  ),
                   const SizedBox(height: 12),
                   ElevatedButton.icon(
                     onPressed: providerNames.isEmpty ? null : _addHolding,
@@ -628,9 +750,24 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
                       ],
                     ),
                     Text('Nguồn: ${item.provider}'),
+                    if (_targetAlertMessages.containsKey(item.id))
+                      Padding(
+                        padding: const EdgeInsets.only(top: 4),
+                        child: Text(
+                          _targetAlertMessages[item.id]!,
+                          style: const TextStyle(
+                            color: Colors.orangeAccent,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
                     Text('Số lượng: ${item.quantityChi} chỉ'),
                     Text('Giá mua TB: ${_formatCurrency(item.avgBuyPrice)} VND'),
                     Text('Giá hiện tại: ${_formatCurrency(currentSell)} VND'),
+                    Text(
+                      'Target: ${_targetSummary(item)}',
+                      style: const TextStyle(color: Colors.white70),
+                    ),
                     Text(
                       'P/L: ${_formatCurrency(pnl)} VND',
                       style: TextStyle(
