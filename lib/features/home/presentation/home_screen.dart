@@ -206,13 +206,17 @@ class _HomeScreenState extends State<HomeScreen> {
   String _buildShareText(_DailyInsightData insight) {
     final lines = [
       '✨ Cập nhật giá vàng hôm nay',
-      insight.buyHint,
-      insight.sellHint,
-      insight.meta,
-      'Nguồn: Giá Vàng VN',
+      '🟢 ${insight.buyHint}',
+      '🔵 ${insight.sellHint}',
+      '📊 ${insight.meta}',
+      '📍 Nguồn: Giá Vàng VN',
     ];
 
     return lines.join('\n');
+  }
+
+  String _buildShareTextShort(_DailyInsightData insight) {
+    return '✨ Giá vàng hôm nay\n🟢 ${insight.buyHint}\n🔵 ${insight.sellHint}\n#GiaVang #GiaVangVN';
   }
 
   Future<void> _copyInsightShareText(_DailyInsightData insight) async {
@@ -222,7 +226,18 @@ class _HomeScreenState extends State<HomeScreen> {
       return;
     }
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Đã copy nội dung chia sẻ')),
+      const SnackBar(content: Text('Đã copy nội dung chia sẻ (đầy đủ)')),
+    );
+  }
+
+  Future<void> _copyInsightShareTextShort(_DailyInsightData insight) async {
+    final text = _buildShareTextShort(insight);
+    await Clipboard.setData(ClipboardData(text: text));
+    if (!mounted) {
+      return;
+    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Đã copy nội dung chia sẻ (ngắn)')),
     );
   }
 
@@ -370,6 +385,7 @@ class _HomeScreenState extends State<HomeScreen> {
             _DailyInsightCard(
               insight: insight,
               onCopyShare: () => _copyInsightShareText(insight),
+              onCopyShareShort: () => _copyInsightShareTextShort(insight),
             ),
             const SizedBox(height: 12),
             if (_isLoadingSummaries && _summaries.isEmpty)
@@ -426,10 +442,12 @@ class _DailyInsightCard extends StatelessWidget {
   const _DailyInsightCard({
     required this.insight,
     required this.onCopyShare,
+    required this.onCopyShareShort,
   });
 
   final _DailyInsightData insight;
   final VoidCallback onCopyShare;
+  final VoidCallback onCopyShareShort;
 
   @override
   Widget build(BuildContext context) {
@@ -468,10 +486,21 @@ class _DailyInsightCard extends StatelessWidget {
               style: const TextStyle(color: Colors.white60, fontSize: 12),
             ),
             const SizedBox(height: 10),
-            OutlinedButton.icon(
-              onPressed: onCopyShare,
-              icon: const Icon(Icons.share_outlined),
-              label: const Text('Copy nội dung chia sẻ'),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                OutlinedButton.icon(
+                  onPressed: onCopyShare,
+                  icon: const Icon(Icons.share_outlined),
+                  label: const Text('Copy bản đầy đủ'),
+                ),
+                OutlinedButton.icon(
+                  onPressed: onCopyShareShort,
+                  icon: const Icon(Icons.copy_all_outlined),
+                  label: const Text('Copy bản ngắn'),
+                ),
+              ],
             ),
           ],
         ),
