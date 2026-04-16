@@ -1,5 +1,12 @@
+import 'dart:io';
+import 'dart:typed_data';
+import 'dart:ui' as ui;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/rendering.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../../../core/theme/app_theme.dart';
 import '../../alerts/presentation/alerts_screen.dart';
@@ -32,6 +39,7 @@ class _HomeScreenState extends State<HomeScreen> {
   late final List<_ProviderMenuItem> _items;
   List<ProviderSummary> _summaries = [];
   bool _isLoadingSummaries = true;
+  final GlobalKey _insightCardBoundaryKey = GlobalKey();
 
   @override
   void initState() {
@@ -241,6 +249,49 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  Future<void> _shareInsightAsImage(_DailyInsightData insight) async {
+    try {
+      final boundary =
+          _insightCardBoundaryKey.currentContext?.findRenderObject() as RenderRepaintBoundary?;
+      if (boundary == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Chưa thể tạo ảnh, vui lòng thử lại.')),
+        );
+        return;
+      }
+
+      final image = await boundary.toImage(pixelRatio: 3);
+      final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+      if (byteData == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Không tạo được ảnh chia sẻ.')),
+        );
+        return;
+      }
+
+      final pngBytes = byteData.buffer.asUint8List();
+      final tempDir = await getTemporaryDirectory();
+      final file = File(
+        '${tempDir.path}/insight_gold_${DateTime.now().millisecondsSinceEpoch}.png',
+      );
+      await file.writeAsBytes(pngBytes, flush: true);
+
+      await SharePlus.instance.share(
+        ShareParams(
+          files: [XFile(file.path)],
+          text: _buildShareTextShort(insight),
+        ),
+      );
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Chia sẻ ảnh thất bại.')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final summariesByTitle = {
@@ -382,10 +433,14 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
             const SizedBox(height: 12),
-            _DailyInsightCard(
-              insight: insight,
-              onCopyShare: () => _copyInsightShareText(insight),
-              onCopyShareShort: () => _copyInsightShareTextShort(insight),
+            RepaintBoundary(
+              key: _insightCardBoundaryKey,
+              child: _DailyInsightCard(
+                insight: insight,
+                onCopyShare: () => _copyInsightShareText(insight),
+                onCopyShareShort: () => _copyInsightShareTextShort(insight),
+                onShareImage: () => _shareInsightAsImage(insight),
+              ),
             ),
             const SizedBox(height: 12),
             if (_isLoadingSummaries && _summaries.isEmpty)
@@ -443,11 +498,13 @@ class _DailyInsightCard extends StatelessWidget {
     required this.insight,
     required this.onCopyShare,
     required this.onCopyShareShort,
+    required this.onShareImage,
   });
 
   final _DailyInsightData insight;
   final VoidCallback onCopyShare;
   final VoidCallback onCopyShareShort;
+  final VoidCallback onShareImage;
 
   @override
   Widget build(BuildContext context) {
@@ -499,6 +556,11 @@ class _DailyInsightCard extends StatelessWidget {
                   onPressed: onCopyShareShort,
                   icon: const Icon(Icons.copy_all_outlined),
                   label: const Text('Copy bản ngắn'),
+                ),
+                OutlinedButton.icon(
+                  onPressed: onShareImage,
+                  icon: const Icon(Icons.image_outlined),
+                  label: const Text('Chia sẻ ảnh'),
                 ),
               ],
             ),
