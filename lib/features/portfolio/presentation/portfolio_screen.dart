@@ -1,7 +1,10 @@
+import 'dart:io';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../../home/models/provider_summary.dart';
 import '../data/portfolio_snapshot_storage.dart';
@@ -484,6 +487,29 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
     _toast('Đã copy CSV vào clipboard');
   }
 
+  Future<File> _writeCsvFileToTemp() async {
+    final csv = _buildPortfolioCsv();
+    final directory = await getTemporaryDirectory();
+    final timestamp = DateTime.now().millisecondsSinceEpoch;
+    final file = File('${directory.path}/portfolio_gold_$timestamp.csv');
+    return file.writeAsString(csv, flush: true);
+  }
+
+  Future<void> _shareCsvFile() async {
+    if (_holdings.isEmpty) {
+      _toast('Portfolio đang trống, chưa có gì để export file.');
+      return;
+    }
+
+    final file = await _writeCsvFileToTemp();
+    await SharePlus.instance.share(
+      ShareParams(
+        files: [XFile(file.path)],
+        text: 'Báo cáo portfolio vàng',
+      ),
+    );
+  }
+
   Future<void> _copySummaryToClipboard() async {
     final totals = _calculateTotals(_holdings);
     final totalPnL = totals.totalCurrent - totals.totalCost;
@@ -552,6 +578,7 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
             itemBuilder: (context) => const [
               PopupMenuItem(value: 'copy_csv', child: Text('Copy CSV')),
               PopupMenuItem(value: 'copy_summary', child: Text('Copy tóm tắt')),
+              PopupMenuItem(value: 'share_csv_file', child: Text('Xuất file CSV')),
             ],
             onSelected: (value) {
               switch (value) {
@@ -560,6 +587,9 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
                   break;
                 case 'copy_summary':
                   _copySummaryToClipboard();
+                  break;
+                case 'share_csv_file':
+                  _shareCsvFile();
                   break;
               }
             },
