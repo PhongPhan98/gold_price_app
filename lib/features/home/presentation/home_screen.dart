@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../../core/theme/app_theme.dart';
 import '../../alerts/presentation/alerts_screen.dart';
@@ -202,6 +203,29 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  String _buildShareText(_DailyInsightData insight) {
+    final lines = [
+      '✨ Cập nhật giá vàng hôm nay',
+      insight.buyHint,
+      insight.sellHint,
+      insight.meta,
+      'Nguồn: Giá Vàng VN',
+    ];
+
+    return lines.join('\n');
+  }
+
+  Future<void> _copyInsightShareText(_DailyInsightData insight) async {
+    final text = _buildShareText(insight);
+    await Clipboard.setData(ClipboardData(text: text));
+    if (!mounted) {
+      return;
+    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Đã copy nội dung chia sẻ')),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final summariesByTitle = {
@@ -343,7 +367,10 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
             const SizedBox(height: 12),
-            _DailyInsightCard(insight: insight),
+            _DailyInsightCard(
+              insight: insight,
+              onCopyShare: () => _copyInsightShareText(insight),
+            ),
             const SizedBox(height: 12),
             if (_isLoadingSummaries && _summaries.isEmpty)
               ...List.generate(
@@ -396,9 +423,13 @@ class _DailyInsightData {
 }
 
 class _DailyInsightCard extends StatelessWidget {
-  const _DailyInsightCard({required this.insight});
+  const _DailyInsightCard({
+    required this.insight,
+    required this.onCopyShare,
+  });
 
   final _DailyInsightData insight;
+  final VoidCallback onCopyShare;
 
   @override
   Widget build(BuildContext context) {
@@ -435,6 +466,12 @@ class _DailyInsightCard extends StatelessWidget {
             Text(
               insight.meta,
               style: const TextStyle(color: Colors.white60, fontSize: 12),
+            ),
+            const SizedBox(height: 10),
+            OutlinedButton.icon(
+              onPressed: onCopyShare,
+              icon: const Icon(Icons.share_outlined),
+              label: const Text('Copy nội dung chia sẻ'),
             ),
           ],
         ),
