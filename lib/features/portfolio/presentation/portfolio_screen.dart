@@ -3,8 +3,10 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import '../../home/models/provider_summary.dart';
+import '../data/portfolio_snapshot_storage.dart';
 import '../data/portfolio_storage.dart';
 import '../models/portfolio_holding.dart';
+import '../models/portfolio_snapshot.dart';
 
 class PortfolioScreen extends StatefulWidget {
   const PortfolioScreen({
@@ -20,12 +22,14 @@ class PortfolioScreen extends StatefulWidget {
 
 class _PortfolioScreenState extends State<PortfolioScreen> {
   final PortfolioStorage _storage = PortfolioStorage();
+  final PortfolioSnapshotStorage _snapshotStorage = PortfolioSnapshotStorage();
 
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _quantityController = TextEditingController();
   final TextEditingController _avgBuyController = TextEditingController();
 
   List<PortfolioHolding> _holdings = [];
+  List<PortfolioSnapshot> _snapshots = [];
   String _selectedProvider = 'Mi Hồng';
 
   @override
@@ -34,6 +38,7 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
     if (widget.summaries.isNotEmpty) {
       _selectedProvider = widget.summaries.first.title;
     }
+    _loadSnapshots();
     _loadHoldings();
   }
 
@@ -46,6 +51,20 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
     setState(() {
       _holdings = holdings;
     });
+
+    await _syncTodaySnapshot(holdings);
+  }
+
+  Future<void> _loadSnapshots() async {
+    final snapshots = await _snapshotStorage.loadSnapshots();
+    if (!mounted) {
+      return;
+    }
+
+    snapshots.sort((a, b) => a.dayKey.compareTo(b.dayKey));
+    setState(() {
+      _snapshots = snapshots;
+    });
   }
 
   Future<void> _persistAndRefresh(List<PortfolioHolding> updated) async {
@@ -56,6 +75,62 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
 
     setState(() {
       _holdings = updated;
+    });
+
+    await _syncTodaySnapshot(updated);
+  }
+
+  ({double totalCost, double totalCurrent}) _calculateTotals(List<PortfolioHolding> holdings) {
+    double totalCost = 0;
+    double totalCurrent = 0;
+
+    for (final item in holdings) {
+      final currentSell = _resolveCurrentSellPrice(item.provider);
+      totalCost += item.avgBuyPrice * item.quantityChi;
+      totalCurrent += currentSell * item.quantityChi;
+    }
+
+    return (totalCost: totalCost, totalCurrent: totalCurrent);
+  }
+
+  String _dayKey(DateTime date) {
+    final mm = date.month.toString().padLeft(2, '0');
+    final dd = date.day.toString().padLeft(2, '0');
+    return '${date.year}-$mm-$dd';
+  }
+
+  Future<void> _syncTodaySnapshot(List<PortfolioHolding> holdings) async {
+    final todayKey = _dayKey(DateTime.now());
+    final totals = _calculateTotals(holdings);
+
+    final snapshots = await _snapshotStorage.loadSnapshots();
+    final next = [...snapshots];
+
+    final idx = next.indexWhere((item) => item.dayKey == todayKey);
+    final todaySnapshot = PortfolioSnapshot(
+      dayKey: todayKey,
+      totalCost: totals.totalCost,
+      totalCurrent: totals.totalCurrent,
+    );
+
+    if (idx >= 0) {
+      next[idx] = todaySnapshot;
+    } else {
+      next.add(todaySnapshot);
+    }
+
+    next.sort((a, b) => a.dayKey.compareTo(b.dayKey));
+    if (next.length > 30) {
+      next.removeRange(0, next.length - 30);
+    }
+
+    await _snapshotStorage.saveSnapshots(next);
+    if (!mounted) {
+      return;
+    }
+
+    setState(() {
+      _snapshots = next;
     });
   }
 
@@ -102,10 +177,11 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
     final quantityController = TextEditingController(text: item.quantityChi.toString());
     final avgBuyController = TextEditingController(text: item.avgBuyPrice.toStringAsFixed(0));
     final providers = _providerNames;
+    final providerOptions = providers.isEmpty ? [item.provider] : providers;
 
-    String selectedProvider = providers.contains(item.provider)
+    String selectedProvider = providerOptions.contains(item.provider)
         ? item.provider
-        : (providers.isNotEmpty ? providers.first : item.provider);
+        : providerOptions.first;
 
     final shouldSave = await showDialog<bool>(
       context: context,
@@ -127,7 +203,7 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
                     DropdownButtonFormField<String>(
                       initialValue: selectedProvider,
                       dropdownColor: Colors.black87,
-                      items: providers
+                      items: providerOptions
                           .map((name) => DropdownMenuItem(value: name, child: Text(name)))
                           .toList(),
                       onChanged: (value) {
@@ -256,19 +332,15 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
 
   @override
   Widget build(BuildContext context) {
-    double totalCost = 0;
-    double totalCurrent = 0;
+    final totals = _calculateTotals(_holdings);
+    final totalCost = totals.totalCost;
+    final totalCurrent = totals.totalCurrent;
 
     final allocationByProvider = <String, double>{};
 
     for (final item in _holdings) {
       final currentSell = _resolveCurrentSellPrice(item.provider);
-      final itemCost = item.avgBuyPrice * item.quantityChi;
       final itemCurrent = currentSell * item.quantityChi;
-
-      totalCost += itemCost;
-      totalCurrent += itemCurrent;
-
       allocationByProvider[item.provider] = (allocationByProvider[item.provider] ?? 0) + itemCurrent;
     }
 
@@ -284,6 +356,10 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
         .map((e) => _PortfolioAllocationItem(provider: e.key, value: e.value))
         .toList()
       ..sort((a, b) => b.value.compareTo(a.value));
+
+    final trendSnapshots = _snapshots.length <= 7
+        ? _snapshots
+        : _snapshots.sublist(_snapshots.length - 7);
 
     return Scaffold(
       appBar: AppBar(title: const Text('Portfolio vàng')),
@@ -312,6 +388,29 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
                       fontWeight: FontWeight.bold,
                     ),
                   ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Hiệu suất 7 ngày',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 10),
+                  if (trendSnapshots.isEmpty)
+                    const Text('Chưa có dữ liệu hiệu suất. Hãy quay lại mỗi ngày để tích lũy lịch sử.'),
+                  if (trendSnapshots.isNotEmpty)
+                    _PortfolioTrendChart(
+                      snapshots: trendSnapshots,
+                      formatter: _formatCurrency,
+                    ),
                 ],
               ),
             ),
@@ -454,6 +553,84 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
         ],
       ),
     );
+  }
+}
+
+
+class _PortfolioTrendChart extends StatelessWidget {
+  const _PortfolioTrendChart({
+    required this.snapshots,
+    required this.formatter,
+  });
+
+  final List<PortfolioSnapshot> snapshots;
+  final String Function(double) formatter;
+
+  @override
+  Widget build(BuildContext context) {
+    final maxValue = snapshots
+        .map((e) => e.totalCurrent)
+        .fold<double>(0, (prev, next) => next > prev ? next : prev);
+
+    return Column(
+      children: [
+        SizedBox(
+          height: 150,
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              for (final item in snapshots)
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        Expanded(
+                          child: Align(
+                            alignment: Alignment.bottomCenter,
+                            child: Container(
+                              width: 18,
+                              height: maxValue <= 0
+                                  ? 6
+                                  : ((item.totalCurrent / maxValue) * 110).clamp(6, 110),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFCAB601),
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          _shortLabel(item.dayKey),
+                          style: const TextStyle(color: Colors.white60, fontSize: 11),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 10),
+        Align(
+          alignment: Alignment.centerLeft,
+          child: Text(
+            'Giá trị mới nhất: ${formatter(snapshots.last.totalCurrent)} VND',
+            style: const TextStyle(color: Colors.white70),
+          ),
+        ),
+      ],
+    );
+  }
+
+  String _shortLabel(String dayKey) {
+    final parts = dayKey.split('-');
+    if (parts.length != 3) {
+      return dayKey;
+    }
+    return '${parts[2]}/${parts[1]}';
   }
 }
 
