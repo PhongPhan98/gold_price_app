@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../home/models/provider_summary.dart';
 import '../data/portfolio_snapshot_storage.dart';
@@ -318,6 +319,77 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
     return buffer.toString();
   }
 
+  String _csvEscape(String value) {
+    final needsQuote =
+        value.contains(',') || value.contains('"') || value.contains('\n');
+    if (!needsQuote) {
+      return value;
+    }
+    return '"${value.replaceAll('"', '""')}"';
+  }
+
+  String _buildPortfolioCsv() {
+    final headers = [
+      'ten_tai_san',
+      'nguon_gia',
+      'so_luong_chi',
+      'gia_mua_tb_vnd',
+      'gia_hien_tai_vnd',
+      'von_vnd',
+      'gia_tri_hien_tai_vnd',
+      'pnl_vnd',
+    ];
+
+    final lines = <String>[headers.join(',')];
+
+    for (final item in _holdings) {
+      final currentSell = _resolveCurrentSellPrice(item.provider);
+      final cost = item.avgBuyPrice * item.quantityChi;
+      final currentValue = currentSell * item.quantityChi;
+      final pnl = currentValue - cost;
+
+      final row = [
+        item.name,
+        item.provider,
+        item.quantityChi.toStringAsFixed(4),
+        item.avgBuyPrice.toStringAsFixed(0),
+        currentSell.toStringAsFixed(0),
+        cost.toStringAsFixed(0),
+        currentValue.toStringAsFixed(0),
+        pnl.toStringAsFixed(0),
+      ].map(_csvEscape).join(',');
+
+      lines.add(row);
+    }
+
+    return lines.join('\n');
+  }
+
+  Future<void> _copyCsvToClipboard() async {
+    if (_holdings.isEmpty) {
+      _toast('Portfolio đang trống, chưa có gì để export.');
+      return;
+    }
+
+    final csv = _buildPortfolioCsv();
+    await Clipboard.setData(ClipboardData(text: csv));
+    _toast('Đã copy CSV vào clipboard');
+  }
+
+  Future<void> _copySummaryToClipboard() async {
+    final totals = _calculateTotals(_holdings);
+    final totalPnL = totals.totalCurrent - totals.totalCost;
+    final lines = [
+      'Tổng vốn: ${_formatCurrency(totals.totalCost)} VND',
+      'Giá trị hiện tại: ${_formatCurrency(totals.totalCurrent)} VND',
+      'P/L: ${_formatCurrency(totalPnL)} VND',
+      'Số tài sản: ${_holdings.length}',
+    ];
+
+    await Clipboard.setData(ClipboardData(text: lines.join('\n')));
+    _toast('Đã copy tóm tắt portfolio');
+  }
+
   void _toast(String text) {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(text)));
   }
@@ -362,7 +434,28 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
         : _snapshots.sublist(_snapshots.length - 7);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Portfolio vàng')),
+      appBar: AppBar(
+        title: const Text('Portfolio vàng'),
+        actions: [
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.ios_share_outlined),
+            itemBuilder: (context) => const [
+              PopupMenuItem(value: 'copy_csv', child: Text('Copy CSV')),
+              PopupMenuItem(value: 'copy_summary', child: Text('Copy tóm tắt')),
+            ],
+            onSelected: (value) {
+              switch (value) {
+                case 'copy_csv':
+                  _copyCsvToClipboard();
+                  break;
+                case 'copy_summary':
+                  _copySummaryToClipboard();
+                  break;
+              }
+            },
+          ),
+        ],
+      ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
