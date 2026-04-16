@@ -113,6 +113,95 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  double? _parsePrice(String? raw) {
+    if (raw == null) {
+      return null;
+    }
+
+    final normalized = raw.trim();
+    if (normalized.isEmpty || normalized.toLowerCase() == 'liên hệ') {
+      return null;
+    }
+
+    final digits = normalized.replaceAll(RegExp(r'[^0-9]'), '');
+    if (digits.isEmpty) {
+      return null;
+    }
+
+    final value = double.tryParse(digits);
+    if (value == null || value <= 0) {
+      return null;
+    }
+
+    return value;
+  }
+
+  String _formatCompactVnd(double value) {
+    final rounded = value.round().toString();
+    final buffer = StringBuffer();
+    for (var i = 0; i < rounded.length; i++) {
+      final reverseIndex = rounded.length - i;
+      buffer.write(rounded[i]);
+      if (reverseIndex > 1 && reverseIndex % 3 == 1) {
+        buffer.write('.');
+      }
+    }
+    return buffer.toString();
+  }
+
+  _DailyInsightData _buildDailyInsight(List<ProviderSummary> summaries) {
+    if (summaries.isEmpty) {
+      return const _DailyInsightData(
+        title: 'Insight hôm nay',
+        buyHint: 'Chưa có dữ liệu để phân tích.',
+        sellHint: 'Hãy kéo để làm mới dữ liệu.',
+        meta: 'Đợi dữ liệu mới...',
+      );
+    }
+
+    ProviderSummary? bestBuyForUser; // lowest sell price
+    double? lowestSell;
+
+    ProviderSummary? bestSellForUser; // highest buy price
+    double? highestBuy;
+
+    for (final item in summaries) {
+      if (item.hasError) {
+        continue;
+      }
+
+      final sell = _parsePrice(item.topSellPrice);
+      if (sell != null && (lowestSell == null || sell < lowestSell)) {
+        lowestSell = sell;
+        bestBuyForUser = item;
+      }
+
+      final buy = _parsePrice(item.topBuyPrice);
+      if (buy != null && (highestBuy == null || buy > highestBuy)) {
+        highestBuy = buy;
+        bestSellForUser = item;
+      }
+    }
+
+    final buyHint = bestBuyForUser == null || lowestSell == null
+        ? 'Mua vào: chưa đủ dữ liệu so sánh.'
+        : 'Mua vào tốt: ${bestBuyForUser.title} (${_formatCompactVnd(lowestSell)}đ/chỉ)';
+
+    final sellHint = bestSellForUser == null || highestBuy == null
+        ? 'Bán ra: chưa đủ dữ liệu so sánh.'
+        : 'Bán ra tốt: ${bestSellForUser.title} (${_formatCompactVnd(highestBuy)}đ/chỉ)';
+
+    final activeCount = summaries.where((s) => !s.hasError).length;
+    final meta = 'So sánh $activeCount/${summaries.length} nguồn khả dụng';
+
+    return _DailyInsightData(
+      title: 'Insight hôm nay',
+      buyHint: buyHint,
+      sellHint: sellHint,
+      meta: meta,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final summariesByTitle = {
@@ -128,6 +217,8 @@ class _HomeScreenState extends State<HomeScreen> {
         }
         return aFav ? -1 : 1;
       });
+
+    final insight = _buildDailyInsight(_summaries);
 
     return Scaffold(
       appBar: AppBar(
@@ -252,6 +343,8 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
             const SizedBox(height: 12),
+            _DailyInsightCard(insight: insight),
+            const SizedBox(height: 12),
             if (_isLoadingSummaries && _summaries.isEmpty)
               ...List.generate(
                 3,
@@ -279,6 +372,69 @@ class _HomeScreenState extends State<HomeScreen> {
                 'v1.0.0',
                 style: TextStyle(color: Colors.white54, fontSize: 12),
               ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+
+class _DailyInsightData {
+  const _DailyInsightData({
+    required this.title,
+    required this.buyHint,
+    required this.sellHint,
+    required this.meta,
+  });
+
+  final String title;
+  final String buyHint;
+  final String sellHint;
+  final String meta;
+}
+
+class _DailyInsightCard extends StatelessWidget {
+  const _DailyInsightCard({required this.insight});
+
+  final _DailyInsightData insight;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.lightbulb_outline, color: AppTheme.accent),
+                const SizedBox(width: 8),
+                Text(
+                  insight.title,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            Text(
+              '• ${insight.buyHint}',
+              style: const TextStyle(color: Colors.white, height: 1.35),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              '• ${insight.sellHint}',
+              style: const TextStyle(color: Colors.white, height: 1.35),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              insight.meta,
+              style: const TextStyle(color: Colors.white60, fontSize: 12),
             ),
           ],
         ),
