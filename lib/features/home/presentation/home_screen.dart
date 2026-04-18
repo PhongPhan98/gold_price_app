@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
@@ -158,13 +157,23 @@ class _HomeScreenState extends State<HomeScreen> {
     return buffer.toString();
   }
 
+  String _timeLabelNow() {
+    final now = DateTime.now();
+    final dd = now.day.toString().padLeft(2, '0');
+    final mm = now.month.toString().padLeft(2, '0');
+    final hh = now.hour.toString().padLeft(2, '0');
+    final min = now.minute.toString().padLeft(2, '0');
+    return '$dd/$mm $hh:$min';
+  }
+
   _DailyInsightData _buildDailyInsight(List<ProviderSummary> summaries) {
     if (summaries.isEmpty) {
-      return const _DailyInsightData(
+      return _DailyInsightData(
         title: 'Insight hôm nay',
         buyHint: 'Chưa có dữ liệu để phân tích.',
         sellHint: 'Hãy kéo để làm mới dữ liệu.',
         meta: 'Đợi dữ liệu mới...',
+        generatedAt: _timeLabelNow(),
       );
     }
 
@@ -208,6 +217,7 @@ class _HomeScreenState extends State<HomeScreen> {
       buyHint: buyHint,
       sellHint: sellHint,
       meta: meta,
+      generatedAt: _timeLabelNow(),
     );
   }
 
@@ -217,6 +227,7 @@ class _HomeScreenState extends State<HomeScreen> {
       '🟢 ${insight.buyHint}',
       '🔵 ${insight.sellHint}',
       '📊 ${insight.meta}',
+      '🕒 Cập nhật: ${insight.generatedAt}',
       '📍 Nguồn: Giá Vàng VN',
     ];
 
@@ -224,7 +235,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   String _buildShareTextShort(_DailyInsightData insight) {
-    return '✨ Giá vàng hôm nay\n🟢 ${insight.buyHint}\n🔵 ${insight.sellHint}\n#GiaVang #GiaVangVN';
+    return '✨ Giá vàng hôm nay\n🟢 ${insight.buyHint}\n🔵 ${insight.sellHint}\n🕒 ${insight.generatedAt}\n#GiaVang #GiaVangVN';
   }
 
   Future<void> _copyInsightShareText(_DailyInsightData insight) async {
@@ -485,12 +496,14 @@ class _DailyInsightData {
     required this.buyHint,
     required this.sellHint,
     required this.meta,
+    required this.generatedAt,
   });
 
   final String title;
   final String buyHint;
   final String sellHint;
   final String meta;
+  final String generatedAt;
 }
 
 class _DailyInsightCard extends StatelessWidget {
@@ -509,62 +522,91 @@ class _DailyInsightCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                const Icon(Icons.lightbulb_outline, color: AppTheme.accent),
-                const SizedBox(width: 8),
-                Text(
-                  insight.title,
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
+      elevation: 0,
+      clipBehavior: Clip.antiAlias,
+      child: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              const Color(0xFF3A2921),
+              const Color(0xFF231717),
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          border: Border.all(color: AppTheme.accent.withValues(alpha: 0.35)),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  const Icon(Icons.auto_awesome, color: AppTheme.accent),
+                  const SizedBox(width: 8),
+                  Text(
+                    insight.title,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
+                  const Spacer(),
+                  Text(
+                    insight.generatedAt,
+                    style: const TextStyle(color: Colors.white60, fontSize: 12),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              Text(
+                '• ${insight.buyHint}',
+                style: const TextStyle(color: Colors.white, height: 1.35),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                '• ${insight.sellHint}',
+                style: const TextStyle(color: Colors.white, height: 1.35),
+              ),
+              const SizedBox(height: 10),
+              Text(
+                insight.meta,
+                style: const TextStyle(color: Colors.white70, fontSize: 12),
+              ),
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  OutlinedButton.icon(
+                    onPressed: onCopyShare,
+                    icon: const Icon(Icons.share_outlined),
+                    label: const Text('Copy bản đầy đủ'),
+                  ),
+                  OutlinedButton.icon(
+                    onPressed: onCopyShareShort,
+                    icon: const Icon(Icons.copy_all_outlined),
+                    label: const Text('Copy bản ngắn'),
+                  ),
+                  OutlinedButton.icon(
+                    onPressed: onShareImage,
+                    icon: const Icon(Icons.image_outlined),
+                    label: const Text('Chia sẻ ảnh'),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              const Text(
+                'Giá Vàng VN • Daily Insight',
+                style: TextStyle(
+                  color: Colors.white54,
+                  fontSize: 11,
+                  fontStyle: FontStyle.italic,
                 ),
-              ],
-            ),
-            const SizedBox(height: 10),
-            Text(
-              '• ${insight.buyHint}',
-              style: const TextStyle(color: Colors.white, height: 1.35),
-            ),
-            const SizedBox(height: 6),
-            Text(
-              '• ${insight.sellHint}',
-              style: const TextStyle(color: Colors.white, height: 1.35),
-            ),
-            const SizedBox(height: 10),
-            Text(
-              insight.meta,
-              style: const TextStyle(color: Colors.white60, fontSize: 12),
-            ),
-            const SizedBox(height: 10),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                OutlinedButton.icon(
-                  onPressed: onCopyShare,
-                  icon: const Icon(Icons.share_outlined),
-                  label: const Text('Copy bản đầy đủ'),
-                ),
-                OutlinedButton.icon(
-                  onPressed: onCopyShareShort,
-                  icon: const Icon(Icons.copy_all_outlined),
-                  label: const Text('Copy bản ngắn'),
-                ),
-                OutlinedButton.icon(
-                  onPressed: onShareImage,
-                  icon: const Icon(Icons.image_outlined),
-                  label: const Text('Chia sẻ ảnh'),
-                ),
-              ],
-            ),
-          ],
+              ),
+            ],
+          ),
         ),
       ),
     );
