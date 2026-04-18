@@ -39,6 +39,7 @@ class _HomeScreenState extends State<HomeScreen> {
   List<ProviderSummary> _summaries = [];
   bool _isLoadingSummaries = true;
   final GlobalKey _insightCardBoundaryKey = GlobalKey();
+  _InsightThemeMode _insightThemeMode = _InsightThemeMode.dark;
 
   @override
   void initState() {
@@ -448,6 +449,12 @@ class _HomeScreenState extends State<HomeScreen> {
               key: _insightCardBoundaryKey,
               child: _DailyInsightCard(
                 insight: insight,
+                themeMode: _insightThemeMode,
+                onThemeChanged: (mode) {
+                  setState(() {
+                    _insightThemeMode = mode;
+                  });
+                },
                 onCopyShare: () => _copyInsightShareText(insight),
                 onCopyShareShort: () => _copyInsightShareTextShort(insight),
                 onShareImage: () => _shareInsightAsImage(insight),
@@ -479,7 +486,7 @@ class _HomeScreenState extends State<HomeScreen> {
             const Center(
               child: Text(
                 'v1.0.0',
-                style: TextStyle(color: Colors.white54, fontSize: 12),
+                style: TextStyle(color: metaTextColor, fontSize: 12),
               ),
             ),
           ],
@@ -489,6 +496,8 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
+
+enum _InsightThemeMode { dark, light }
 
 class _DailyInsightData {
   const _DailyInsightData({
@@ -509,28 +518,37 @@ class _DailyInsightData {
 class _DailyInsightCard extends StatelessWidget {
   const _DailyInsightCard({
     required this.insight,
+    required this.themeMode,
+    required this.onThemeChanged,
     required this.onCopyShare,
     required this.onCopyShareShort,
     required this.onShareImage,
   });
 
   final _DailyInsightData insight;
+  final _InsightThemeMode themeMode;
+  final ValueChanged<_InsightThemeMode> onThemeChanged;
   final VoidCallback onCopyShare;
   final VoidCallback onCopyShareShort;
   final VoidCallback onShareImage;
 
   @override
   Widget build(BuildContext context) {
+    final isDark = themeMode == _InsightThemeMode.dark;
+    final backgroundGradient = isDark
+        ? const [Color(0xFF3A2921), Color(0xFF231717)]
+        : const [Color(0xFFF8EFD0), Color(0xFFF1DEC4)];
+    final textColor = isDark ? Colors.white : const Color(0xFF2C1E1E);
+    final subTextColor = isDark ? Colors.white70 : const Color(0xFF5B4545);
+    final metaTextColor = isDark ? Colors.white60 : const Color(0xFF735D5D);
+
     return Card(
       elevation: 0,
       clipBehavior: Clip.antiAlias,
       child: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
-            colors: [
-              const Color(0xFF3A2921),
-              const Color(0xFF231717),
-            ],
+            colors: backgroundGradient,
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
@@ -547,32 +565,49 @@ class _DailyInsightCard extends StatelessWidget {
                   const SizedBox(width: 8),
                   Text(
                     insight.title,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
+                      color: textColor,
                     ),
                   ),
                   const Spacer(),
                   Text(
                     insight.generatedAt,
-                    style: const TextStyle(color: Colors.white60, fontSize: 12),
+                    style: TextStyle(color: metaTextColor, fontSize: 12),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              Wrap(
+                spacing: 8,
+                children: [
+                  ChoiceChip(
+                    label: const Text('Dark'),
+                    selected: themeMode == _InsightThemeMode.dark,
+                    onSelected: (_) => onThemeChanged(_InsightThemeMode.dark),
+                  ),
+                  ChoiceChip(
+                    label: const Text('Light'),
+                    selected: themeMode == _InsightThemeMode.light,
+                    onSelected: (_) => onThemeChanged(_InsightThemeMode.light),
                   ),
                 ],
               ),
               const SizedBox(height: 10),
               Text(
                 '• ${insight.buyHint}',
-                style: const TextStyle(color: Colors.white, height: 1.35),
+                style: TextStyle(color: textColor, height: 1.35),
               ),
               const SizedBox(height: 6),
               Text(
                 '• ${insight.sellHint}',
-                style: const TextStyle(color: Colors.white, height: 1.35),
+                style: TextStyle(color: textColor, height: 1.35),
               ),
               const SizedBox(height: 10),
               Text(
                 insight.meta,
-                style: const TextStyle(color: Colors.white70, fontSize: 12),
+                style: TextStyle(color: subTextColor, fontSize: 12),
               ),
               const SizedBox(height: 12),
               Wrap(
@@ -597,10 +632,10 @@ class _DailyInsightCard extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 10),
-              const Text(
+              Text(
                 'Giá Vàng VN • Daily Insight',
                 style: TextStyle(
-                  color: Colors.white54,
+                  color: metaTextColor,
                   fontSize: 11,
                   fontStyle: FontStyle.italic,
                 ),
