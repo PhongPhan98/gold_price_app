@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter/rendering.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../core/theme/app_theme.dart';
 import '../../alerts/presentation/alerts_screen.dart';
@@ -40,6 +41,7 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _isLoadingSummaries = true;
   final GlobalKey _insightCardBoundaryKey = GlobalKey();
   _InsightThemeMode _insightThemeMode = _InsightThemeMode.dark;
+  static const String _insightThemeModeKey = 'home_insight_theme_mode';
 
   @override
   void initState() {
@@ -71,7 +73,38 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     ];
     _loadFavorites();
+    _loadInsightThemeMode();
     _loadSummaries();
+  }
+
+  Future<void> _loadInsightThemeMode() async {
+    final preferences = await SharedPreferences.getInstance();
+    final raw = preferences.getString(_insightThemeModeKey);
+
+    if (!mounted || raw == null) {
+      return;
+    }
+
+    _InsightThemeMode? mode;
+    for (final item in _InsightThemeMode.values) {
+      if (item.name == raw) {
+        mode = item;
+        break;
+      }
+    }
+
+    if (mode == null) {
+      return;
+    }
+
+    setState(() {
+      _insightThemeMode = mode!;
+    });
+  }
+
+  Future<void> _saveInsightThemeMode(_InsightThemeMode mode) async {
+    final preferences = await SharedPreferences.getInstance();
+    await preferences.setString(_insightThemeModeKey, mode.name);
   }
 
   Future<void> _loadFavorites() async {
@@ -454,6 +487,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   setState(() {
                     _insightThemeMode = mode;
                   });
+                  _saveInsightThemeMode(mode);
                 },
                 onCopyShare: () => _copyInsightShareText(insight),
                 onCopyShareShort: () => _copyInsightShareTextShort(insight),
